@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="1C-Bitrix QA Plugin">
+  <defs>
+    <linearGradient id="qaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+  </defs>
+  <path d="M64 14L108 30V62C108 89 88 108 64 116C40 108 20 89 20 62V30L64 14Z" fill="url(#qaBg)"/>
+  <path d="M46 64L59 77L84 49" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="1C-Bitrix Marketing and CRO">
+  <defs>
+    <linearGradient id="mktBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#E11D48"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#mktBg)"/>
+  <rect x="14" y="38" width="7" height="12" rx="2" fill="#FFFFFF" opacity="0.75"/>
+  <rect x="25" y="30" width="7" height="20" rx="2" fill="#FFFFFF" opacity="0.88"/>
+  <rect x="36" y="21" width="7" height="29" rx="2" fill="#FFFFFF"/>
+  <path d="M16 28 L29 19 L39 23 L50 13" fill="none" stroke="#FEF3C7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M43 13 L50 13 L50 20" fill="none" stroke="#FEF3C7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

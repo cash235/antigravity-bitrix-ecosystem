@@ -1,0 +1,132 @@
+name: Ecosystem CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Check JS/MJS syntax (node --check)
+        run: |
+          for f in antigravity-bitrix-*/scripts/*.mjs antigravity-bitrix-ide-panel/extension.js; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+
+      - name: Validate plugin manifests, skills, agents, and collision rules
+        run: |
+          node - <<'EOF'
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const ALLOWED_KEYS = new Set([
+            "name", "displayName", "version", "description", "logo",
+            "author", "homepage", "repository", "suggestedPrompts", "disabled"
+          ]);
+
+          const plugins = [
+            "antigravity-bitrix-core",
+            "antigravity-bitrix-seo-geo",
+            "antigravity-bitrix-qa",
+            "antigravity-bitrix-marketing"
+          ];
+
+          const seenSkills = new Map();
+          const seenAgents = new Map();
+
+          for (const dir of plugins) {
+            const manifestPath = path.join(dir, "plugin.json");
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+
+            for (const key of Object.keys(manifest)) {
+              if (!ALLOWED_KEYS.has(key)) {
+                throw new Error(`Unsupported top-level key '${key}' in ${manifestPath}`);
+              }
+            }
+            if (!manifest.name || !/^[a-z0-9-]+$/.test(manifest.name)) {
+              throw new Error(`Invalid plugin name in ${manifestPath}`);
+            }
+            if (manifest.logo && !fs.existsSync(path.join(dir, manifest.logo))) {
+              throw new Error(`Missing logo '${manifest.logo}' referenced in ${manifestPath}`);
+            }
+            if (Array.isArray(manifest.suggestedPrompts) && manifest.suggestedPrompts.length > 3) {
+              throw new Error(`More than 3 suggestedPrompts in ${manifestPath}`);
+            }
+
+            const skillsDir = path.join(dir, "skills");
+            if (fs.existsSync(skillsDir)) {
+              for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+                if (!entry.isDirectory()) continue;
+                const skillMd = path.join(skillsDir, entry.name, "SKILL.md");
+                if (!fs.existsSync(skillMd)) {
+                  throw new Error(`Missing SKILL.md in ${path.join(skillsDir, entry.name)}`);
+                }
+                const txt = fs.readFileSync(skillMd, "utf8");
+                if (!txt.startsWith("---")) {
+                  throw new Error(`Missing YAML frontmatter in ${skillMd}`);
+                }
+                if (seenSkills.has(entry.name)) {
+                  throw new Error(`Skill collision: '${entry.name}' in ${seenSkills.get(entry.name)} and ${dir}`);
+                }
+                seenSkills.set(entry.name, dir);
+              }
+            }
+
+            const agentsDir = path.join(dir, "agents");
+            if (fs.existsSync(agentsDir)) {
+              for (const f of fs.readdirSync(agentsDir).filter(x => x.endsWith(".md"))) {
+                const agentPath = path.join(agentsDir, f);
+                const txt = fs.readFileSync(agentPath, "utf8");
+                if (!txt.startsWith("---")) {
+                  throw new Error(`Missing YAML frontmatter in ${agentPath}`);
+                }
+                if (seenAgents.has(f)) {
+                  throw new Error(`Agent collision: '${f}' in ${seenAgents.get(f)} and ${dir}`);
+                }
+                seenAgents.set(f, dir);
+              }
+            }
+          }
+
+          // Validate IDE panel package.json
+          const idePkg = JSON.parse(fs.readFileSync("antigravity-bitrix-ide-panel/package.json", "utf8"));
+          if (!idePkg.main || !fs.existsSync(path.join("antigravity-bitrix-ide-panel", idePkg.main))) {
+            throw new Error("Missing main entry in antigravity-bitrix-ide-panel/package.json");
+          }
+
+          console.log(`Validated ${plugins.length} plugins (${seenSkills.size} unique skills, ${seenAgents.size} unique agents) + IDE panel.`);
+          EOF
+
+      - name: Guard against private keys and internal handoff files
+        run: |
+          if find . -name "HANDOFF_*.md" -not -path "./.git/*" | grep -q .; then
+            echo "ERROR: Internal HANDOFF_*.md files must not be committed!"
+            exit 1
+          fi
+          if grep -rn "BEGIN.*PRIVATE KEY" --exclude-dir=.git --exclude="bitrix-qa-preflight.mjs" .; then
+            echo "ERROR: Private key material detected!"
+            exit 1
+          fi
+
+      - name: Smoke test bootstrapper & dashboard renderer
+        run: |
+          TMP_DIR=$(mktemp -d)
+          node antigravity-bitrix-core/scripts/bitrix-bootstrap.mjs "$TMP_DIR" --profile store --name "CI Test" --json > /dev/null
+          node antigravity-bitrix-core/scripts/bitrix-dashboard-render.mjs "$TMP_DIR" --mode artifact --out "$TMP_DIR/a.html"
+          node antigravity-bitrix-core/scripts/bitrix-dashboard-render.mjs "$TMP_DIR" --mode webview --out "$TMP_DIR/w.html"
+          rm -rf "$TMP_DIR"

@@ -1,0 +1,21 @@
+{
+  "name": "antigravity-bitrix-qa",
+  "displayName": "1C-Bitrix QA & Production Readiness",
+  "version": "1.0.0",
+  "description": "Dedicated 1C-Bitrix testing, live Browser Visual QA (375/768/1440px), Click-Path button/AJAX state audit, Pre-Launch Production Readiness triage, and zero-dependency QA security preflight scanner for Antigravity IDE.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "cash235",
+    "url": "https://github.com/cash235"
+  },
+  "homepage": "https://github.com/cash235/antigravity-bitrix-ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cash235/antigravity-bitrix-ecosystem.git"
+  },
+  "suggestedPrompts": [
+    "Run a full Pre-Launch Production Audit and QA preflight scan on this 1C-Bitrix project",
+    "Run Browser QA on mobile (375px), tablet (768px), and desktop (1440px) for key site pages",
+    "Run a Click-Path Audit on checkout, order modal, filters, and AJAX buttons to find state bugs"
+  ]
+}

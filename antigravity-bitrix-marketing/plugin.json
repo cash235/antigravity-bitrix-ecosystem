@@ -1,0 +1,21 @@
+{
+  "name": "antigravity-bitrix-marketing",
+  "displayName": "1C-Bitrix Marketing & CRO",
+  "version": "1.0.0",
+  "description": "Conversion Rate Optimization (CRO), Product Lens (ICE anti-busywork), E-commerce/B2B copywriting, retention campaigns, and Visual UX Design Critique for 1C-Bitrix websites.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "cash235",
+    "url": "https://github.com/cash235"
+  },
+  "homepage": "https://github.com/cash235/antigravity-bitrix-ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cash235/antigravity-bitrix-ecosystem.git"
+  },
+  "suggestedPrompts": [
+    "Run a Product Lens & CRO audit on the main conversion funnel (catalog -> product card -> cart/lead) and rank top 5 fixes by ICE.",
+    "Audit above-the-fold copy, trust blocks, and out-of-stock CTAs on key Bitrix pages using the 5-second clarity test.",
+    "Design a retention & recovery campaign for abandoned carts and zero-result catalog searches integrated with Bitrix CRM."
+  ]
+}

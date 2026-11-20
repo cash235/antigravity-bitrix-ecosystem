@@ -1,0 +1,21 @@
+{
+  "name": "antigravity-bitrix-seo-geo",
+  "displayName": "Bitrix SEO & GEO",
+  "version": "2.1.0",
+  "description": "Universal SEO, GEO (AI Search), Web Analytics, Schema.org, E-commerce, Drift Monitoring, and REST API Reporting plugin for 1C-Bitrix D7 projects — from simple corporate sites to multisite catalogs.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "cash235",
+    "url": "https://github.com/cash235"
+  },
+  "homepage": "https://github.com/cash235/antigravity-bitrix-ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cash235/antigravity-bitrix-ecosystem.git"
+  },
+  "suggestedPrompts": [
+    "Run a full Bitrix SEO and GEO audit on the current workspace and live URL",
+    "Audit Schema.org JSON-LD, llms.txt, AI crawler rules, and component_epilog.php cache safety",
+    "Set up or audit GTM, GA4, Yandex.Metrika, Search Console, and funnel bottleneck tracking"
+  ]
+}

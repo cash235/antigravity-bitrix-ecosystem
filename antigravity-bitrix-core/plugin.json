@@ -1,0 +1,21 @@
+{
+  "name": "antigravity-bitrix-core",
+  "displayName": "1C-Bitrix Core & Central Orchestrator",
+  "version": "2.1.0",
+  "description": "Central 1C-Bitrix D7 Project Orchestrator & Engineering Foundation for Antigravity IDE: ICE prioritization, live quota-aware model router, deterministic Command Center Dashboard v2.1 renderer, one-command project bootstrapper, Greenfield/Brownfield onboarding, memory/ADR governance, and Fail-Closed code review.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "cash235",
+    "url": "https://github.com/cash235"
+  },
+  "homepage": "https://github.com/cash235/antigravity-bitrix-ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cash235/antigravity-bitrix-ecosystem.git"
+  },
+  "suggestedPrompts": [
+    "Open the Central Orchestrator Command Center Dashboard v2.1 with prioritized tasks, ROI, and model recommendations",
+    "Initialize this 1C-Bitrix project (branching onboarding interview + legacy-style scan + docs/memory + backlog)",
+    "Orchestrate a new feature, bugfix, or refactor with Acceptance Criteria, optimal model routing, and Fail-Closed review"
+  ]
+}

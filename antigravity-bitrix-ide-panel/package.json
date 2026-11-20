@@ -1,0 +1,60 @@
+{
+  "name": "antigravity-bitrix-command-center",
+  "displayName": "1C-Bitrix Command Center",
+  "description": "Adds a 1-click 1C-Bitrix Central Orchestrator Command Center icon to the Antigravity IDE / VS Code left Activity Bar with live 5-tab dashboard, QA Preflight, and project bootstrapper.",
+  "version": "1.0.0",
+  "publisher": "bitrix-antigravity",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:bitrixCommandCenter.sidebar",
+    "onCommand:bitrixCommandCenter.openDashboard",
+    "onCommand:bitrixCommandCenter.refresh",
+    "onCommand:bitrixCommandCenter.initProject",
+    "onCommand:bitrixCommandCenter.runQaPreflight"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "bitrixCommandCenter",
+          "title": "1C-Bitrix Command Center",
+          "icon": "assets/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "bitrixCommandCenter": [
+        {
+          "type": "webview",
+          "id": "bitrixCommandCenter.sidebar",
+          "name": "Командный центр"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "bitrixCommandCenter.openDashboard",
+        "title": "1C-Bitrix: Открыть Command Center Dashboard"
+      },
+      {
+        "command": "bitrixCommandCenter.refresh",
+        "title": "1C-Bitrix: Обновить скан проекта"
+      },
+      {
+        "command": "bitrixCommandCenter.initProject",
+        "title": "1C-Bitrix: Инициализировать проект (Bootstrap)"
+      },
+      {
+        "command": "bitrixCommandCenter.runQaPreflight",
+        "title": "1C-Bitrix: Запустить QA Preflight"
+      }
+    ]
+  }
+}

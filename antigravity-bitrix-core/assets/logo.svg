@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="1C-Bitrix Core Plugin">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="104" height="104" rx="22" fill="url(#bg)"/>
+  <path d="M36 42h34c11 0 18 5.5 18 14 0 5.5-3.2 9.6-8.4 11.4 6.5 1.8 10.4 6.6 10.4 13.1 0 9.5-7.8 15.5-19.5 15.5H36V42zm13 11v10h18c4.8 0 7.6-1.9 7.6-5.1 0-3.1-2.8-4.9-7.6-4.9H49zm0 20v12h20.2c5.4 0 8.5-2.1 8.5-6 0-3.8-3.1-6-8.5-6H49z" fill="#FFFFFF"/>
+  <circle cx="93" cy="36" r="9" fill="#F59E0B"/>
+</svg>
