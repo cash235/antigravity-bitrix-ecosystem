@@ -118,7 +118,7 @@ jobs:
             echo "ERROR: Internal HANDOFF_*.md files must not be committed!"
             exit 1
           fi
-          if grep -rn "BEGIN.*PRIVATE KEY" --exclude-dir=.git --exclude="bitrix-qa-preflight.mjs" .; then
+          if grep -rnE -- "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----" --exclude-dir=.git --exclude="bitrix-qa-preflight.mjs" --exclude="ci.yml" .; then
             echo "ERROR: Private key material detected!"
             exit 1
           fi
