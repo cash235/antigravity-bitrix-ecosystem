@@ -57,14 +57,16 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
 
   const qa = snapshot && snapshot.qaPreflight ? snapshot.qaPreflight : null;
   const qaText = qa
-    ? `${qa.verdict} (${(qa.critical || []).length} crit / ${(qa.high || []).length} high)`
-    : "не запускался";
-  const qaClass =
+    ? `${qa.verdict} (${(qa.critical || []).length}/${(qa.high || []).length})`
+    : "—";
+  const qaDot =
     qa && (qa.critical || []).length > 0
-      ? "err"
+      ? "dot-err"
       : qa && (qa.high || []).length > 0
-        ? "warn"
-        : "ok";
+        ? "dot-warn"
+        : qa
+          ? "dot-ok"
+          : "dot-muted";
 
   return `<!DOCTYPE html>
 <html lang="ru">
@@ -72,99 +74,146 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 12px;
-      font-family: var(--vscode-font-family, sans-serif);
-      font-size: 12.5px;
+      padding: 10px 12px 16px;
+      font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+      font-size: 12px;
+      line-height: 1.4;
       color: var(--vscode-foreground);
       background: transparent;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
-    .btn {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--vscode-button-border, var(--vscode-panel-border, transparent));
-      background: var(--vscode-button-secondaryBackground, rgba(128,128,128,0.18));
-      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-      font-size: 12.5px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .btn:hover { opacity: 0.92; }
-    .btn-primary {
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      justify-content: center;
-      padding: 10px;
-    }
-    .card {
-      border: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.25));
-      border-radius: 8px;
-      padding: 10px;
-      background: var(--vscode-editorWidget-background, rgba(128,128,128,0.08));
+    .section {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .muted { color: var(--vscode-descriptionForeground); font-size: 11.5px; }
-    .mono { font-family: var(--vscode-editor-font-family, monospace); }
-    .ok { color: var(--vscode-testing-iconPassed, #22c55e); font-weight: 700; }
-    .warn { color: var(--vscode-editorWarning-foreground, #f59e0b); font-weight: 700; }
-    .err { color: var(--vscode-editorError-foreground, #ef4444); font-weight: 700; }
-    .chips { display: flex; flex-wrap: wrap; gap: 5px; }
-    .chip {
+    .section-title {
       font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 5px;
-      border: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.3));
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--vscode-sideBarSectionHeader-foreground, var(--vscode-descriptionForeground));
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.2));
     }
-    .chip.on { border-color: var(--vscode-testing-iconPassed, #22c55e); color: var(--vscode-testing-iconPassed, #22c55e); }
-    .chip.off { opacity: 0.65; }
+    .btn {
+      width: 100%;
+      height: 28px;
+      padding: 0 9px;
+      border-radius: 3px;
+      border: 1px solid var(--vscode-button-border, var(--vscode-panel-border, rgba(128,128,128,0.22)));
+      background: var(--vscode-button-secondaryBackground, rgba(128,128,128,0.12));
+      color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: background-color 0.12s;
+    }
+    .btn:hover { background: var(--vscode-button-secondaryHoverBackground, var(--vscode-list-hoverBackground, rgba(128,128,128,0.2))); }
+    .btn-primary {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: var(--vscode-button-background);
+      justify-content: center;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: var(--vscode-button-hoverBackground, var(--vscode-button-background)); opacity: 0.94; }
+    .ico { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.9; }
+    .kv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 0;
+    }
+    .muted { color: var(--vscode-descriptionForeground); }
+    .mono { font-family: var(--vscode-editor-font-family, ui-monospace, Consolas, monospace); font-size: 11.5px; }
+    .status-inline { display: inline-flex; align-items: center; gap: 5px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot-ok { background: var(--vscode-testing-iconPassed, #73daca); }
+    .dot-warn { background: var(--vscode-editorWarning-foreground, #e0af68); }
+    .dot-err { background: var(--vscode-editorError-foreground, #f7768e); }
+    .dot-muted { background: var(--vscode-descriptionForeground); opacity: 0.5; }
+    .err-box {
+      padding: 7px 9px;
+      border-radius: 3px;
+      border: 1px solid var(--vscode-editorError-foreground, rgba(247,118,142,0.5));
+      font-size: 11.5px;
+    }
+    .actions-col { display: flex; flex-direction: column; gap: 5px; }
   </style>
 </head>
 <body>
-  <button type="button" class="btn btn-primary" data-cmd="openDashboard">🚀 Открыть Дашборд</button>
+  <button type="button" class="btn btn-primary" data-cmd="openDashboard">
+    <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+    Открыть Дашборд
+  </button>
 
   ${errorText
-      ? `<div class="card"><div class="err">Ошибка сканирования</div><div class="muted">${esc(errorText)}</div></div>`
+      ? `<div class="err-box"><div style="font-weight:600;margin-bottom:2px;">Ошибка сканирования</div><div class="muted">${esc(errorText)}</div></div>`
       : !rootDir
-        ? `<div class="card"><div><strong>Проект не открыт</strong></div><div class="muted">Откройте папку 1С-Битрикс проекта в IDE, чтобы запустить сканер и дашборд.</div></div>`
+        ? `<div class="section"><div class="section-title">Проект</div><div class="muted">Откройте папку 1С-Битрикс проекта в IDE.</div></div>`
         : snapshot
           ? `
-  <div class="card">
-    <div class="row"><strong>${esc(snapshot.projectName)}</strong><span class="ok mono">${esc(snapshot.readinessScore)}/100</span></div>
-    <div class="row muted"><span>QA Preflight</span><span class="${qaClass}">${esc(qaText)}</span></div>
-    <div class="row muted"><span>Бэклог</span><span class="mono">${esc(snapshot.backlog.doneCount)} done / ${esc(snapshot.backlog.openCount)} open</span></div>
-    <div class="row muted"><span>Память / ADR</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} daily</span></div>
-    <div class="row muted"><span>Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} tok</span></div>
+  <div class="section">
+    <div class="section-title">Сводка · ${esc(snapshot.projectName)}</div>
+    <div class="kv-list">
+      <div class="kv-row"><span class="muted">Готовность</span><span class="mono">${esc(snapshot.readinessScore)}/100</span></div>
+      <div class="kv-row"><span class="muted">QA Preflight</span><span class="status-inline mono"><span class="dot ${qaDot}"></span>${esc(qaText)}</span></div>
+      <div class="kv-row"><span class="muted">Бэклог</span><span class="mono">${esc(snapshot.backlog.doneCount)} done / ${esc(snapshot.backlog.openCount)} open</span></div>
+      <div class="kv-row"><span class="muted">Память</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} daily</span></div>
+      <div class="kv-row"><span class="muted">Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} tok</span></div>
+    </div>
   </div>
-  <div class="card">
-    <div class="muted" style="font-weight:600;">Экосистема 4 плагинов</div>
-    <div class="chips">
+
+  <div class="section">
+    <div class="section-title">Плагины (4)</div>
+    <div class="kv-list">
       ${badges
             .map(
               (b) =>
-                `<span class="chip mono ${b.ver ? "on" : "off"}">${esc(b.label)}${b.ver ? " v" + esc(b.ver) : " OFF"}</span>`
+                `<div class="kv-row"><span class="status-inline mono"><span class="dot ${b.ver ? "dot-ok" : "dot-muted"}"></span>${esc(b.label)}</span><span class="mono muted">${b.ver ? "v" + esc(b.ver) : "off"}</span></div>`
             )
             .join("")}
     </div>
   </div>`
-          : `<div class="card muted">Загрузка снапшота проекта...</div>`
+          : `<div class="muted">Загрузка снапшота...</div>`
     }
 
-  <button type="button" class="btn" data-cmd="refresh">🔄 Обновить скан</button>
-  <button type="button" class="btn" data-cmd="initProject">🛠️ Инициализировать проект</button>
-  <button type="button" class="btn" data-cmd="runQaPreflight">🛡️ Запустить QA Preflight</button>
-  <button type="button" class="btn" data-cmd="copyInitPrompt">📋 Промпт для bitrix-project-init</button>
+  <div class="section">
+    <div class="section-title">Действия</div>
+    <div class="actions-col">
+      <button type="button" class="btn" data-cmd="refresh">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.7M13.5 2.5v2.8h-2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Обновить скан
+      </button>
+      <button type="button" class="btn" data-cmd="initProject">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+        Инициализировать проект
+      </button>
+      <button type="button" class="btn" data-cmd="runQaPreflight">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V4l5-2z" stroke-linejoin="round"/></svg>
+        Запустить QA Preflight
+      </button>
+      <button type="button" class="btn" data-cmd="copyInitPrompt">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="8" height="9" rx="1"/><path d="M3 11V3a1 1 0 0 1 1-1h6" stroke-linecap="round"/></svg>
+        Промпт bitrix-project-init
+      </button>
+    </div>
+  </div>
 
   <script>
     const vscode = acquireVsCodeApi();

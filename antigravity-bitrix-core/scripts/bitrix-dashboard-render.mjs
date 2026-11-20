@@ -374,17 +374,25 @@ const isWebview = mode === "webview";
 
 const webviewCss = `
   :root {
-    --background: var(--vscode-editor-background, #0f172a);
-    --card: var(--vscode-sideBar-background, var(--vscode-editorWidget-background, #1e293b));
-    --border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(148, 163, 184, 0.24)));
-    --foreground: var(--vscode-editor-foreground, #e2e8f0);
-    --muted-foreground: var(--vscode-descriptionForeground, #94a3b8);
-    --primary: var(--vscode-button-background, #2563eb);
+    --background: var(--vscode-editor-background, #1a1b26);
+    --card: var(--vscode-sideBar-background, var(--vscode-editorWidget-background, #16161e));
+    --surface-hover: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
+    --border: var(--vscode-panel-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.22)));
+    --foreground: var(--vscode-foreground, var(--vscode-editor-foreground, #c0caf5));
+    --muted-foreground: var(--vscode-descriptionForeground, #787c99);
+    --primary: var(--vscode-button-background, #3d59a1);
+    --primary-hover: var(--vscode-button-hoverBackground, #4b6bc0);
     --primary-foreground: var(--vscode-button-foreground, #ffffff);
-    --link: var(--vscode-textLink-foreground, #60a5fa);
-    --success: var(--vscode-testing-iconPassed, #22c55e);
-    --warning: var(--vscode-editorWarning-foreground, #f59e0b);
-    --error: var(--vscode-editorError-foreground, #ef4444);
+    --secondary-bg: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.14));
+    --secondary-hover: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.22));
+    --secondary-fg: var(--vscode-button-secondaryForeground, var(--foreground));
+    --input-bg: var(--vscode-input-background, var(--background));
+    --input-border: var(--vscode-input-border, var(--border));
+    --focus-border: var(--vscode-focusBorder, var(--primary));
+    --link: var(--vscode-textLink-foreground, #7aa2f7);
+    --success: var(--vscode-testing-iconPassed, #73daca);
+    --warning: var(--vscode-editorWarning-foreground, #e0af68);
+    --error: var(--vscode-editorError-foreground, #f7768e);
   }
   * { box-sizing: border-box; }
   body {
@@ -392,87 +400,211 @@ const webviewCss = `
     padding: 0;
     background: var(--background);
     color: var(--foreground);
-    font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
-    font-size: 13px;
+    font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    font-size: 12.5px;
     line-height: 1.45;
   }
-  .container { max-width: 1240px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  .subcard { background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  .row-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-  .col { display: flex; flex-direction: column; gap: 10px; }
-  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
-  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+`;
+
+const sharedUiCss = `
+  :root {
+    --surface-hover: color-mix(in srgb, var(--foreground) 6%, transparent);
+    --secondary-bg: color-mix(in srgb, var(--foreground) 6%, transparent);
+    --secondary-hover: color-mix(in srgb, var(--foreground) 11%, transparent);
+    --secondary-fg: var(--foreground);
+    --input-bg: var(--background);
+    --input-border: var(--border);
+    --focus-border: var(--primary);
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 14px 18px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 12px 14px; }
+  .subcard { background: var(--background); border: 1px solid var(--border); border-radius: 4px; padding: 9px 11px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .row-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 10px; }
+
+  /* IDE Buttons: crisp 3px radius, restrained neutral chrome + single primary accent */
   .btn {
     appearance: none;
-    background: var(--background);
-    color: var(--foreground);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 3px;
     border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 6px 11px;
+    background: var(--secondary-bg);
+    color: var(--secondary-fg);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.15s, border-color 0.15s;
+    transition: background-color 0.12s, border-color 0.12s;
   }
-  .btn:hover { border-color: var(--primary); }
-  .btn-primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
-  .btn-primary:hover { opacity: 0.92; }
-  .pill { border-radius: 999px; padding: 4px 10px; font-weight: 500; }
-  .tab-btn[aria-selected="true"], .pill-btn[aria-pressed="true"] {
+  .btn:hover { background: var(--secondary-hover); border-color: var(--muted-foreground); }
+  .btn:focus-visible { outline: 1px solid var(--focus-border); outline-offset: 1px; }
+  .btn-primary {
     background: var(--primary);
     color: var(--primary-foreground);
     border-color: var(--primary);
   }
-  .input, .select {
-    background: var(--background);
-    color: var(--foreground);
+  .btn-primary:hover { opacity: 0.92; border-color: var(--primary); }
+
+  /* Filter chips: crisp 3px segmented buttons */
+  .filter-btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 3px;
     border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 6px 10px;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .filter-btn:hover { background: var(--surface-hover); color: var(--foreground); }
+  .filter-btn[aria-pressed="true"] {
+    background: var(--surface-hover);
+    color: var(--foreground);
+    border-color: var(--primary);
+  }
+
+  /* Native IDE tab bar with bottom active indicator */
+  .tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    border-top: 1px solid var(--border);
+    margin: 10px -14px -12px;
+    padding: 0 10px;
+  }
+  .tab-btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 11px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s, background-color 0.12s;
+  }
+  .tab-btn:hover { color: var(--foreground); background: var(--surface-hover); }
+  .tab-btn[aria-selected="true"] {
+    color: var(--foreground);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+
+  .input, .select {
+    height: 26px;
+    background: var(--input-bg);
+    color: var(--foreground);
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    padding: 0 8px;
     font-size: 12px;
   }
+  .input:focus, .select:focus { outline: 1px solid var(--focus-border); outline-offset: -1px; }
+
+  /* Restrained IDE tags: neutral monochrome with subtle dot for semantic state */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted-foreground);
+  }
+  .tag-strong { color: var(--foreground); background: var(--surface-hover); }
+  .tag-error { color: var(--error); border-color: color-mix(in srgb, var(--error) 45%, var(--border)); }
+  .tag-warning { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); }
+  .tag-success { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .dot-ok { background: var(--success); }
+  .dot-warn { background: var(--warning); }
+  .dot-err { background: var(--error); }
+  .dot-muted { background: var(--muted-foreground); opacity: 0.6; }
+
+  .ico { width: 14px; height: 14px; flex-shrink: 0; display: inline-block; vertical-align: -2px; }
   .muted { color: var(--muted-foreground); }
   .mono { font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Consolas, monospace); }
-  .title-lg { font-size: 19px; font-weight: 700; margin: 2px 0; }
-  .title-md { font-size: 14px; font-weight: 700; margin: 0; }
-  .kpi-val { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .text-xs { font-size: 12px; }
+  .title-lg { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .title-md { font-size: 12px; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); display: inline-flex; align-items: center; gap: 6px; }
+  .kpi-val { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .text-xs { font-size: 11.5px; }
   .text-success { color: var(--success); }
   .text-warning { color: var(--warning); }
   .text-error { color: var(--error); }
   .text-link { color: var(--link); }
   .hidden { display: none !important; }
-  .divider { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+  .divider { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px; }
+
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted-foreground); font-weight: 600; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { color: var(--muted-foreground); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  tbody tr:hover { background: var(--surface-hover); }
+
   pre {
     margin: 0;
-    padding: 10px;
+    padding: 9px 10px;
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: 3px;
     white-space: pre-wrap;
     word-break: break-word;
-    font-size: 12px;
+    font-size: 11.5px;
+    line-height: 1.45;
     overflow-x: auto;
   }
-  details { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
-  details > summary { list-style: none; padding: 8px 11px; cursor: pointer; font-weight: 600; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+  details { background: var(--card); border: 1px solid var(--border); border-radius: 3px; }
+  details > summary {
+    list-style: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 11.5px;
+    color: var(--muted-foreground);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  details > summary:hover { color: var(--foreground); background: var(--surface-hover); }
   details > summary::-webkit-details-marker { display: none; }
   details[open] .lbl-open { display: none; }
   details:not([open]) .lbl-close { display: none; }
-  .details-body { padding: 8px 11px 11px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-  .progress-track { width: 100%; height: 9px; border-radius: 999px; background: rgba(148, 163, 184, 0.22); overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 999px; }
+  .details-body { padding: 8px 10px 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+  .progress-track { width: 100%; height: 5px; border-radius: 2px; background: color-mix(in srgb, var(--foreground) 12%, transparent); overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; }
+
+  .timeline-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .timeline-line { width: 1px; flex: 1; background: var(--border); margin: 3px 0; }
+
   .toast {
     position: fixed; right: 16px; bottom: 16px; z-index: 999;
-    background: var(--primary); color: var(--primary-foreground);
-    padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    background: var(--card); color: var(--foreground);
+    border: 1px solid var(--primary);
+    padding: 7px 12px; border-radius: 3px; font-size: 12px; font-weight: 500;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   }
   .modal-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000;
@@ -480,31 +612,12 @@ const webviewCss = `
   }
   .modal-box {
     width: min(680px, 100%); background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    border-radius: 4px; padding: 12px; display: flex; flex-direction: column; gap: 8px;
   }
   .modal-box textarea {
     width: 100%; min-height: 220px; background: var(--background); color: var(--foreground);
-    border: 1px solid var(--border); border-radius: 7px; padding: 8px; font-size: 12px;
+    border: 1px solid var(--border); border-radius: 3px; padding: 8px; font-size: 12px;
   }
-`;
-
-const sharedBadgeCss = `
-  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); }
-  .soft-badge-success { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); border-color: color-mix(in srgb, var(--success) 38%, transparent); }
-  .soft-badge-warning { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 38%, transparent); }
-  .soft-badge-error { background: color-mix(in srgb, var(--error) 16%, transparent); color: var(--error); border-color: color-mix(in srgb, var(--error) 38%, transparent); }
-  .soft-badge-primary { background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--link); border-color: color-mix(in srgb, var(--primary) 35%, transparent); }
-  .soft-badge-muted { background: color-mix(in srgb, var(--muted-foreground) 12%, transparent); color: var(--muted-foreground); border-color: var(--border); }
-  .tab-btn[aria-selected="true"], .pill-btn[aria-pressed="true"] {
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border-color: var(--primary);
-  }
-  .progress-track { background: color-mix(in srgb, var(--muted-foreground) 20%, transparent); }
-  details > summary { list-style: none; }
-  details > summary::-webkit-details-marker { display: none; }
-  .timeline-dot { width: 10px; height: 10px; border-radius: 999px; margin-top: 4px; flex-shrink: 0; }
-  .timeline-line { width: 2px; flex: 1; background: var(--border); margin: 3px 0; }
 `;
 
 const clientScript = `
@@ -615,26 +728,16 @@ const clientScript = `
 
   function trackBadge(track) {
     const t = String(track || "Backend");
-    if (t === "QA") return '<span class="badge soft-badge-error">🛡️ ' + esc(t) + "</span>";
-    if (t === "SEO & GEO") return '<span class="badge soft-badge-primary">🔍 ' + esc(t) + "</span>";
-    if (t === "Маркетинг") return '<span class="badge soft-badge-warning">📈 ' + esc(t) + "</span>";
-    if (t === "Frontend") return '<span class="badge soft-badge-success">🎨 ' + esc(t) + "</span>";
-    return '<span class="badge soft-badge-muted">⚙️ ' + esc(t) + "</span>";
+    return '<span class="tag tag-strong">' + esc(t) + "</span>";
   }
 
   function modelBadge(item) {
-    const cls = item.tier === "T2" || item.tier === "T1"
-      ? "soft-badge-success"
-      : item.tier === "T4"
-      ? "soft-badge-warning"
-      : "soft-badge-primary";
-    const icon = item.tier === "T2" || item.tier === "T1" ? "🚀" : item.tier === "T4" ? "💎" : "⚖️";
-    const q1 = item.uiQuota != null ? " (" + esc(item.uiQuota) + "%)" : "";
-    const q2 = item.fallbackQuota != null ? " (" + esc(item.fallbackQuota) + "%)" : "";
+    const q1 = item.uiQuota != null ? " " + esc(item.uiQuota) + "%" : "";
+    const q2 = item.fallbackQuota != null ? " " + esc(item.fallbackQuota) + "%" : "";
     const fb = item.fallbackModel ? " → " + esc(item.fallbackModel) + q2 : "";
     return (
-      '<span class="badge ' + cls + ' mono">' + icon + " " + esc(item.uiModel || "Auto") + q1 + fb + "</span>" +
-      '<span class="badge soft-badge-muted mono" title="Слот invoke_subagent">subagent: ' + esc(item.subagent || "inherit") + "</span>"
+      '<span class="tag mono">' + esc(item.uiModel || "Auto") + q1 + fb + "</span>" +
+      '<span class="tag mono" title="Слот invoke_subagent">subagent: ' + esc(item.subagent || "inherit") + "</span>"
     );
   }
 
@@ -678,9 +781,9 @@ const clientScript = `
       DATA.contextBudget.status === "needs_trim" ? "нужна чистка" : "в норме";
 
     const tabKnowledgeBtn = document.querySelector('[data-tab="knowledge"]');
-    if (tabKnowledgeBtn) tabKnowledgeBtn.textContent = "📚 Знания и Интеграции (" + DATA.knowledge.length + ")";
+    if (tabKnowledgeBtn) tabKnowledgeBtn.textContent = "Знания (" + DATA.knowledge.length + ")";
     const tabBacklogBtn = document.querySelector('[data-tab="backlog"]');
-    if (tabBacklogBtn) tabBacklogBtn.textContent = "📋 Бэклог (" + DATA.backlog.openCount + " open)";
+    if (tabBacklogBtn) tabBacklogBtn.textContent = "Бэклог (" + DATA.backlog.openCount + ")";
   }
 
   function renderBlindSpots() {
@@ -692,19 +795,19 @@ const clientScript = `
     }
     box.innerHTML = DATA.blindSpots
       .map(function (b) {
-        const cls =
+        const dot =
           b.severity === "error"
-            ? "soft-badge-error"
+            ? "dot-err"
             : b.severity === "warning"
-            ? "soft-badge-warning"
-            : "soft-badge-primary";
+            ? "dot-warn"
+            : "dot-ok";
         return (
-          '<div class="subcard col" style="gap:6px;">' +
+          '<div class="subcard col" style="gap:5px;">' +
           '<div class="row-between">' +
-          '<span class="badge ' + cls + '">' + esc(b.badge) + "</span>" +
+          '<span class="tag tag-strong"><span class="dot ' + dot + '"></span>' + esc(b.badge) + "</span>" +
           '<span class="text-xs mono muted">' + esc(b.metric || "") + "</span>" +
           "</div>" +
-          '<div class="text-xs" style="font-weight:700;">' + esc(b.title) + "</div>" +
+          '<div class="text-xs" style="font-weight:600;">' + esc(b.title) + "</div>" +
           '<div class="text-xs muted">' + esc(b.detail) + "</div>" +
           "</div>"
         );
@@ -721,11 +824,11 @@ const clientScript = `
     });
     const order = [
       { key: "all", label: "Все треки" },
-      { key: "QA", label: "🛡️ QA" },
-      { key: "SEO & GEO", label: "🔍 SEO & GEO" },
-      { key: "Frontend", label: "🎨 Frontend" },
-      { key: "Маркетинг", label: "📈 Маркетинг" },
-      { key: "Backend", label: "⚙️ Backend" },
+      { key: "QA", label: "QA" },
+      { key: "SEO & GEO", label: "SEO & GEO" },
+      { key: "Frontend", label: "Frontend" },
+      { key: "Маркетинг", label: "Маркетинг" },
+      { key: "Backend", label: "Backend" },
     ];
     container.innerHTML = order
       .filter(function (o) {
@@ -734,15 +837,15 @@ const clientScript = `
       .map(function (o) {
         const pressed = state.track === o.key ? "true" : "false";
         return (
-          '<button type="button" class="btn pill pill-btn" aria-pressed="' +
+          '<button type="button" class="filter-btn pill-btn" aria-pressed="' +
           pressed +
           '" data-track="' +
           esc(o.key) +
           '">' +
           esc(o.label) +
-          " (" +
+          ' <span class="mono muted">' +
           (counts[o.key] || 0) +
-          ")</button>"
+          "</span></button>"
         );
       })
       .join("");
@@ -773,40 +876,40 @@ const clientScript = `
         const regKey = "init:" + item.id;
         promptRegistry.set(regKey, { text: item.prompt, label: "Промпт " + item.id + " скопирован" });
         return (
-          '<article class="subcard col" style="gap:10px;padding:13px;">' +
+          '<article class="subcard col" style="gap:8px;padding:11px 12px;">' +
           '<div class="row-between">' +
           '<div class="row">' +
           trackBadge(item.track) +
-          '<span class="badge soft-badge-muted mono">' + esc(item.tier) + " · " + esc(item.pipeline) + "</span>" +
+          '<span class="tag mono">' + esc(item.tier) + " · " + esc(item.pipeline) + "</span>" +
           modelBadge(item) +
           "</div>" +
           '<div class="row">' +
-          '<span class="text-xs mono muted">I:' + esc(item.impact) + " × C:" + esc(item.confidence) + " ÷ E:" + esc(item.effort) + "</span>" +
-          '<span class="badge soft-badge-primary mono">ICE ' + esc(item.ice) + "</span>" +
+          '<span class="text-xs mono muted">I:' + esc(item.impact) + " C:" + esc(item.confidence) + " E:" + esc(item.effort) + "</span>" +
+          '<span class="tag tag-strong mono">ICE ' + esc(item.ice) + "</span>" +
           "</div>" +
           "</div>" +
-          '<div style="font-size:14px;font-weight:700;">' + esc(item.title) + "</div>" +
+          '<div style="font-size:13px;font-weight:600;">' + esc(item.title) + "</div>" +
           '<div class="grid-2">' +
-          '<div class="card" style="padding:10px;">' +
-          '<div class="text-xs text-success" style="font-weight:700;margin-bottom:3px;">Бизнес-польза</div>' +
+          '<div class="panel" style="padding:8px 10px;">' +
+          '<div class="text-xs muted" style="font-weight:600;margin-bottom:2px;">Бизнес-польза</div>' +
           '<div class="text-xs">' + esc(item.benefit) + "</div>" +
           "</div>" +
-          '<div class="card" style="padding:10px;">' +
-          '<div class="text-xs muted" style="font-weight:700;margin-bottom:3px;">Факт / Обоснование · Инструменты</div>' +
+          '<div class="panel" style="padding:8px 10px;">' +
+          '<div class="text-xs muted" style="font-weight:600;margin-bottom:2px;">Обоснование · Инструменты</div>' +
           '<div class="text-xs">' + esc(item.evidence) + "</div>" +
-          '<div class="text-xs text-link mono" style="margin-top:4px;">' + esc(item.tools) + "</div>" +
+          '<div class="text-xs text-link mono" style="margin-top:3px;">' + esc(item.tools) + "</div>" +
           "</div>" +
           "</div>" +
           "<details>" +
           "<summary>" +
-          "<span>📋 Показать точный промпт для запуска агента (AC-001..N + Must NOT)</span>" +
-          '<span class="text-link lbl-open">Развернуть ▾</span>' +
-          '<span class="text-link lbl-close">Свернуть ▴</span>' +
+          "<span>Промпт для запуска агента (AC-001..N + Must NOT)</span>" +
+          '<span class="text-link lbl-open">Показать</span>' +
+          '<span class="text-link lbl-close">Скрыть</span>' +
           "</summary>" +
           '<div class="details-body">' +
           '<pre class="mono">' + esc(item.prompt) + "</pre>" +
           '<div class="row" style="justify-content:flex-end;">' +
-          '<button type="button" class="btn btn-primary copy-trigger" data-copy-key="' + esc(regKey) + '">📋 Скопировать промпт (' + esc(item.id) + ")</button>" +
+          '<button type="button" class="btn btn-primary copy-trigger" data-copy-key="' + esc(regKey) + '">Копировать промпт (' + esc(item.id) + ")</button>" +
           "</div>" +
           "</div>" +
           "</details>" +
@@ -830,24 +933,24 @@ const clientScript = `
     });
     body.innerHTML = rows
       .map(function (k, idx) {
-        const cls =
+        const dot =
           k.status === "ok"
-            ? "soft-badge-success"
+            ? "dot-ok"
             : k.status === "error"
-            ? "soft-badge-error"
-            : "soft-badge-warning";
+            ? "dot-err"
+            : "dot-warn";
         let actionHtml = '<span class="muted">—</span>';
         if (k.personalizePrompt) {
           const key = "know:" + idx;
           promptRegistry.set(key, { text: k.personalizePrompt, label: "Промпт персонализации скопирован" });
           actionHtml =
-            '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(key) + '">📋 Промпт</button>';
+            '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(key) + '">Промпт</button>';
         }
         return (
           "<tr>" +
-          '<td style="font-weight:600;">' + esc(k.label) + "</td>" +
-          '<td><span class="badge soft-badge-muted">' + esc(k.category) + "</span></td>" +
-          '<td><span class="badge ' + cls + '">' + esc(k.statusLabel) + "</span></td>" +
+          '<td style="font-weight:500;">' + esc(k.label) + "</td>" +
+          '<td><span class="tag">' + esc(k.category) + "</span></td>" +
+          '<td><span class="tag tag-strong"><span class="dot ' + dot + '"></span>' + esc(k.statusLabel) + "</span></td>" +
           '<td class="muted">' + esc(k.evidence) + "</td>" +
           "<td>" + actionHtml + "</td>" +
           "</tr>"
@@ -879,13 +982,13 @@ const clientScript = `
             '<div class="subcard row-between">' +
             '<div class="col" style="gap:4px;flex:1;min-width:220px;">' +
             '<div class="row">' +
-            '<span class="mono text-link" style="font-weight:700;">' + esc(t.id) + "</span>" +
+            '<span class="mono text-link" style="font-weight:600;">' + esc(t.id) + "</span>" +
             trackBadge(t.track) +
             '<span class="mono muted text-xs">' + esc(t.source) + "</span>" +
             "</div>" +
-            '<div class="text-xs" style="font-weight:600;">' + esc(t.text) + "</div>" +
+            '<div class="text-xs" style="font-weight:500;">' + esc(t.text) + "</div>" +
             "</div>" +
-            '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(key) + '">📋 Промпт запуска</button>' +
+            '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(key) + '">Копировать промпт</button>' +
             "</div>"
           );
         })
@@ -903,7 +1006,7 @@ const clientScript = `
             .map(function (t) {
               return (
                 '<div class="subcard row text-xs muted">' +
-                '<span class="text-success" style="font-weight:700;">✓</span>' +
+                '<span class="dot dot-ok"></span>' +
                 "<span>" + esc(t) + "</span>" +
                 "</div>"
               );
@@ -913,21 +1016,21 @@ const clientScript = `
 
   function renderGitAndLocal() {
     document.getElementById("gitBranchTitle").textContent = DATA.git.isRepo
-      ? "Git Graph · ветка " + DATA.git.branch
+      ? "Git Graph · " + DATA.git.branch
       : "Git не инициализирован";
     document.getElementById("gitSummarySub").textContent = DATA.git.isRepo
-      ? "Всего коммитов: " + DATA.git.totalCommits + " · Незакоммиченных файлов: " + DATA.git.uncommittedCount
+      ? "Коммитов: " + DATA.git.totalCommits + " · Незакоммиченных: " + DATA.git.uncommittedCount
       : "Рекомендуется инициализировать Git для чекпоинтов и откатов.";
 
     const treeBadge = document.getElementById("gitTreeBadge");
     if (!DATA.git.isRepo) {
-      treeBadge.className = "badge soft-badge-warning";
+      treeBadge.className = "tag tag-warning";
       treeBadge.textContent = "No Git";
     } else if (DATA.git.uncommittedCount === 0) {
-      treeBadge.className = "badge soft-badge-success";
+      treeBadge.className = "tag tag-success";
       treeBadge.textContent = "Clean Tree";
     } else {
-      treeBadge.className = "badge soft-badge-warning";
+      treeBadge.className = "tag tag-warning";
       treeBadge.textContent = DATA.git.uncommittedCount + " Uncommitted";
     }
 
@@ -939,16 +1042,16 @@ const clientScript = `
       tl.innerHTML = commits
         .map(function (c, idx) {
           return (
-            '<div style="display:flex;gap:10px;align-items:stretch;">' +
-            '<div style="display:flex;flex-direction:column;align-items:center;width:14px;">' +
-            '<span class="timeline-dot" style="background:' + (idx === 0 ? "var(--primary)" : "var(--success)") + ';"></span>' +
+            '<div style="display:flex;gap:9px;align-items:stretch;">' +
+            '<div style="display:flex;flex-direction:column;align-items:center;width:12px;">' +
+            '<span class="timeline-dot" style="background:' + (idx === 0 ? "var(--primary)" : "var(--muted-foreground)") + ';"></span>' +
             (idx < commits.length - 1 ? '<span class="timeline-line"></span>' : "") +
             "</div>" +
-            '<div style="padding-bottom:10px;flex:1;min-width:0;">' +
+            '<div style="padding-bottom:9px;flex:1;min-width:0;">' +
             '<div class="row text-xs">' +
-            '<span class="mono text-link" style="font-weight:700;">' + esc(c.hash) + "</span>" +
+            '<span class="mono text-link" style="font-weight:600;">' + esc(c.hash) + "</span>" +
             '<span class="mono muted">' + esc(c.date) + "</span>" +
-            '<span class="badge soft-badge-muted mono">' + esc(c.author) + "</span>" +
+            '<span class="tag mono">' + esc(c.author) + "</span>" +
             "</div>" +
             '<div class="text-xs" style="margin-top:2px;word-break:break-word;">' + esc(c.message || c.msg) + "</div>" +
             "</div>" +
@@ -965,7 +1068,7 @@ const clientScript = `
 
     document.getElementById("nsBadges").innerHTML =
       (DATA.structure.namespaces || []).length > 0
-        ? DATA.structure.namespaces.map(function (n) { return '<span class="badge soft-badge-primary mono">' + esc(n) + "</span>"; }).join("")
+        ? DATA.structure.namespaces.map(function (n) { return '<span class="tag tag-strong mono">' + esc(n) + "</span>"; }).join("")
         : '<span class="text-xs muted">Не обнаружены</span>';
 
     document.getElementById("tplList").innerHTML =
@@ -984,7 +1087,7 @@ const clientScript = `
 
     document.getElementById("ajaxBadges").innerHTML =
       (DATA.structure.ajaxEndpoints || []).length > 0
-        ? DATA.structure.ajaxEndpoints.map(function (a) { return '<span class="badge soft-badge-muted mono">' + esc(a) + "</span>"; }).join("")
+        ? DATA.structure.ajaxEndpoints.map(function (a) { return '<span class="tag mono">' + esc(a) + "</span>"; }).join("")
         : '<span class="text-xs muted">Не обнаружены</span>';
 
     const qaBox = document.getElementById("qaFindingsBox");
@@ -994,15 +1097,15 @@ const clientScript = `
         .concat((DATA.qaPreflight.high || []).map(function (x) { return Object.assign({ level: "HIGH" }, x); }))
         .concat((DATA.qaPreflight.medium || []).slice(0, 5).map(function (x) { return Object.assign({ level: "MEDIUM" }, x); }));
       if (items.length === 0) {
-        qaBox.innerHTML = '<div class="subcard text-xs text-success">✓ QA Preflight: замечаний уровня CRITICAL/HIGH/MEDIUM не найдено.</div>';
+        qaBox.innerHTML = '<div class="subcard row text-xs"><span class="dot dot-ok"></span><span>QA Preflight: замечаний уровня CRITICAL/HIGH/MEDIUM не найдено.</span></div>';
       } else {
         qaBox.innerHTML = items
           .map(function (f) {
-            const cls = f.level === "CRITICAL" ? "soft-badge-error" : f.level === "HIGH" ? "soft-badge-warning" : "soft-badge-muted";
+            const cls = f.level === "CRITICAL" ? "tag-error" : f.level === "HIGH" ? "tag-warning" : "";
             return (
               '<div class="subcard col" style="gap:4px;">' +
               '<div class="row">' +
-              '<span class="badge ' + cls + '">' + esc(f.level) + " · " + esc(f.code) + "</span>" +
+              '<span class="tag ' + cls + '">' + esc(f.level) + " · " + esc(f.code) + "</span>" +
               '<span class="mono text-xs text-link">' + esc(f.file) + ":" + esc(f.line) + "</span>" +
               "</div>" +
               '<div class="text-xs muted">' + esc(f.message) + "</div>" +
@@ -1019,12 +1122,12 @@ const clientScript = `
   function renderEcosystem() {
     document.getElementById("ecosystemGrid").innerHTML = DATA.ecosystem
       .map(function (p) {
-        const badgeCls = p.installed ? "soft-badge-success" : "soft-badge-warning";
+        const dot = p.installed ? "dot-ok" : "dot-muted";
         return (
-          '<div class="subcard col" style="gap:8px;">' +
+          '<div class="subcard col" style="gap:7px;">' +
           '<div class="row-between">' +
-          '<div><div style="font-weight:700;">' + esc(p.title) + '</div><div class="mono text-xs muted">' + esc(p.name) + "</div></div>" +
-          '<span class="badge ' + badgeCls + ' mono">' + (p.installed ? "v" + esc(p.version) : "OFF") + "</span>" +
+          '<div><div style="font-weight:600;">' + esc(p.title) + '</div><div class="mono text-xs muted">' + esc(p.name) + "</div></div>" +
+          '<span class="tag tag-strong mono"><span class="dot ' + dot + '"></span>' + (p.installed ? "v" + esc(p.version) : "OFF") + "</span>" +
           "</div>" +
           '<div class="row text-xs muted">' +
           "<span>Скиллы: <strong>" + p.skills.length + "</strong></span><span>·</span>" +
@@ -1032,7 +1135,7 @@ const clientScript = `
           "<span>Rules: <strong>~" + p.rulesTok + " tok</strong></span>" +
           "</div>" +
           '<div class="row">' +
-          p.skills.map(function (s) { return '<span class="badge soft-badge-muted mono">' + esc(s) + "</span>"; }).join("") +
+          p.skills.map(function (s) { return '<span class="tag mono">' + esc(s) + "</span>"; }).join("") +
           "</div>" +
           "</div>"
         );
@@ -1042,30 +1145,30 @@ const clientScript = `
     const cb = DATA.contextBudget;
     const pct = Math.min(100, Math.round(((cb.totalBaselineOverheadTokens || 0) / 10000) * 100));
     document.getElementById("cbBadge").textContent = "~" + cb.totalBaselineOverheadTokens + " tok · " + cb.status;
-    document.getElementById("cbBadge").className = "badge " + (cb.status === "needs_trim" ? "soft-badge-warning" : "soft-badge-success");
+    document.getElementById("cbBadge").className = "tag " + (cb.status === "needs_trim" ? "tag-warning" : "tag-success");
     document.getElementById("cbSummary").textContent =
       "Скиллов: " + cb.skillListingsCount + " · Rules: ~" + cb.alwaysOnRulesTokens + " tok · Коллизий: " + (cb.duplicateSkillCollisions || []).length;
     document.getElementById("cbBar").style.width = pct + "%";
-    document.getElementById("cbBar").style.background = cb.status === "needs_trim" ? "var(--warning)" : "var(--success)";
+    document.getElementById("cbBar").style.background = cb.status === "needs_trim" ? "var(--warning)" : "var(--primary)";
 
     const collBox = document.getElementById("cbCollisions");
     if (cb.duplicateSkillCollisions && cb.duplicateSkillCollisions.length > 0) {
       collBox.innerHTML =
-        '<div class="text-xs text-warning" style="font-weight:700;">Обнаружены коллизии скиллов:</div>' +
+        '<div class="text-xs text-warning" style="font-weight:600;">Обнаружены коллизии скиллов:</div>' +
         '<div class="text-xs muted">' + cb.duplicateSkillCollisions.map(esc).join(" · ") + "</div>";
     } else {
-      collBox.innerHTML = '<div class="text-xs text-success">✓ 0 коллизий скиллов в активном окружении.</div>';
+      collBox.innerHTML = '<div class="row text-xs"><span class="dot dot-ok"></span><span>0 коллизий скиллов в активном окружении.</span></div>';
     }
 
     document.getElementById("modelsTimeBadge").textContent = DATA.modelsSnapshotTime;
     document.getElementById("modelsList").innerHTML = DATA.models
       .map(function (m) {
-        const cls = m.status === "error" ? "soft-badge-error" : m.status === "success" ? "soft-badge-success" : m.status === "warning" ? "soft-badge-warning" : "soft-badge-primary";
+        const cls = m.status === "error" ? "tag-error" : m.status === "success" ? "tag-success" : m.status === "warning" ? "tag-warning" : "";
         const q = m.quota != null ? esc(m.quota) + "%" : "auto";
         return (
           '<div class="subcard row-between">' +
-          '<div><div class="text-xs" style="font-weight:700;">' + esc(m.name) + '</div><div class="text-xs muted">' + esc(m.detail) + "</div></div>" +
-          '<span class="badge ' + cls + ' mono">' + q + "</span>" +
+          '<div><div class="text-xs" style="font-weight:600;">' + esc(m.name) + '</div><div class="text-xs muted">' + esc(m.detail) + "</div></div>" +
+          '<span class="tag ' + cls + ' mono">' + q + "</span>" +
           "</div>"
         );
       })
@@ -1073,7 +1176,7 @@ const clientScript = `
 
     document.getElementById("mcpBadges").innerHTML =
       DATA.mcps.length > 0
-        ? DATA.mcps.map(function (m) { return '<span class="badge soft-badge-primary mono">' + esc(m) + "</span>"; }).join("")
+        ? DATA.mcps.map(function (m) { return '<span class="tag tag-strong mono">' + esc(m) + "</span>"; }).join("")
         : '<span class="text-xs muted">MCP-серверы не обнаружены</span>';
   }
 
@@ -1165,64 +1268,33 @@ const clientScript = `
 
 const ideActionBar = isWebview
   ? `
-    <div class="row-between card" style="padding:10px 14px;">
+    <div class="row-between panel" style="padding:8px 12px;">
       <div class="row">
-        <span class="badge soft-badge-primary">Antigravity IDE · Live Panel</span>
+        <span class="tag tag-strong">1C-Bitrix · Workspace</span>
         <span class="text-xs muted mono" id="workspacePathBar">${viewModel.rootDir.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>
       </div>
       <div class="row">
-        <button type="button" class="btn btn-primary" data-ide-action="refresh">🔄 Обновить скан</button>
-        <button type="button" class="btn" data-ide-action="initProject">🛠️ Инициализировать проект</button>
-        <button type="button" class="btn" data-ide-action="runQaPreflight">🛡️ QA Preflight</button>
+        <button type="button" class="btn btn-primary" data-ide-action="refresh">
+          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.7M13.5 2.5v2.8h-2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Обновить скан
+        </button>
+        <button type="button" class="btn" data-ide-action="initProject">
+          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+          Инициализировать
+        </button>
+        <button type="button" class="btn" data-ide-action="runQaPreflight">
+          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V4l5-2z" stroke-linejoin="round"/></svg>
+          QA Preflight
+        </button>
       </div>
     </div>`
   : "";
 
 const headSection = isWebview
-  ? `<style>${webviewCss}\n${sharedBadgeCss}</style>`
+  ? `<style>${webviewCss}\n${sharedUiCss}</style>`
   : `<script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
-    ${sharedBadgeCss}
-    .container { max-width: 1240px; margin: 0 auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .subcard { background: var(--background); border: 1px solid var(--border); border-radius: 9px; padding: 11px 12px; }
-    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .row-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-    .col { display: flex; flex-direction: column; gap: 10px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
-    .btn { background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
-    .btn:hover { border-color: var(--primary); }
-    .btn-primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
-    .pill { border-radius: 999px; padding: 4px 11px; font-weight: 500; }
-    .input, .select { background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; }
-    .muted { color: var(--muted-foreground); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
-    .title-lg { font-size: 20px; font-weight: 700; }
-    .title-md { font-size: 14px; font-weight: 700; }
-    .kpi-val { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .text-xs { font-size: 12px; }
-    .text-success { color: var(--success); }
-    .text-warning { color: var(--warning); }
-    .text-error { color: var(--error); }
-    .text-link { color: var(--link); }
-    .divider { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { color: var(--muted-foreground); font-weight: 600; }
-    pre { margin: 0; padding: 10px; background: var(--background); border: 1px solid var(--border); border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-size: 12px; overflow-x: auto; }
-    details { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
-    details > summary { padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-    details[open] .lbl-open { display: none; }
-    details:not([open]) .lbl-close { display: none; }
-    .details-body { padding: 8px 12px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-    .progress-track { width: 100%; height: 9px; border-radius: 999px; overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 999px; }
-    .toast { position: fixed; right: 16px; bottom: 16px; z-index: 999; background: var(--primary); color: var(--primary-foreground); padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .modal-box { width: min(680px, 100%); background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-    .modal-box textarea { width: 100%; min-height: 220px; background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; }
+    ${sharedUiCss}
   </style>`;
 
 const html = `<!DOCTYPE html>
@@ -1230,33 +1302,33 @@ const html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1C-Bitrix Command Center v2.1 — Central Orchestrator</title>
+  <title>1C-Bitrix Command Center v2.1</title>
   ${headSection}
 </head>
 <body class="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen p-0 m-0">
   <div class="container">
-    <div id="runtimeError" class="card hidden text-error text-xs" style="border-color:var(--error);"></div>
+    <div id="runtimeError" class="panel hidden text-error text-xs" style="border-color:var(--error);"></div>
     ${ideActionBar}
 
     <!-- Header -->
-    <header class="card col">
+    <header class="panel col">
       <div class="row-between" style="align-items:flex-start;">
-        <div class="col" style="gap:5px;flex:1;min-width:260px;">
+        <div class="col" style="gap:4px;flex:1;min-width:260px;">
           <div class="row">
-            <span class="badge soft-badge-primary">Central Orchestrator v2.1</span>
-            <span class="badge soft-badge-success">4-Plugin Ecosystem</span>
+            <span class="tag tag-strong">Central Orchestrator v2.1</span>
+            <span class="tag">4-Plugin Ecosystem</span>
             <span class="text-xs muted mono" id="scanTimeEl">Скан: —</span>
           </div>
           <h1 class="title-lg">Командный центр 1С-Битрикс · <span class="text-link" id="projectNameEl">—</span></h1>
           <div class="text-xs muted">
-            Оркестратор по 5 трекам (Backend, Frontend, SEO &amp; GEO, Маркетинг, QA) с ICE-приоритизацией, маршрутизацией моделей и контролем бюджета контекста.
+            5 треков (Backend, Frontend, SEO &amp; GEO, Маркетинг, QA) · ICE-приоритизация · маршрутизация моделей · контроль контекста.
           </div>
         </div>
 
-        <div class="grid-4" style="min-width:320px;flex:1;max-width:560px;">
+        <div class="grid-4" style="min-width:320px;flex:1;max-width:540px;">
           <div class="subcard">
             <div class="text-xs muted">Готовность</div>
-            <div class="kpi-val text-success" id="kpiReadiness">0/100</div>
+            <div class="kpi-val" id="kpiReadiness">0/100</div>
             <div class="text-xs muted" id="kpiMemoryMeta">—</div>
           </div>
           <div class="subcard">
@@ -1277,34 +1349,34 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
 
-      <nav class="row divider" role="tablist" aria-label="Разделы дашборда">
-        <button type="button" class="btn tab-btn" role="tab" aria-selected="true" data-tab="orchestrator">🧠 Оркестратор и Инициативы</button>
-        <button type="button" class="btn tab-btn" role="tab" aria-selected="false" data-tab="knowledge">📚 Знания и Интеграции</button>
-        <button type="button" class="btn tab-btn" role="tab" aria-selected="false" data-tab="backlog">📋 Бэклог</button>
-        <button type="button" class="btn tab-btn" role="tab" aria-selected="false" data-tab="git">🌿 Git и /local/</button>
-        <button type="button" class="btn tab-btn" role="tab" aria-selected="false" data-tab="ecosystem">🧩 4 Плагина и Бюджет</button>
+      <nav class="tab-bar" role="tablist" aria-label="Разделы дашборда">
+        <button type="button" class="tab-btn" role="tab" aria-selected="true" data-tab="orchestrator">Оркестратор</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="knowledge">Знания</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="backlog">Бэклог</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="git">Git и /local/</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="ecosystem">Плагины и Бюджет</button>
       </nav>
     </header>
 
     <!-- TAB 1: ORCHESTRATOR -->
     <section id="tab-orchestrator" class="tab-panel col">
-      <div class="card col">
+      <div class="panel col">
         <div class="row-between">
-          <h2 class="title-md">🎯 Радар «Слепых пятен»</h2>
+          <h2 class="title-md">Радар «Слепых пятен»</h2>
           <span class="text-xs muted">Детерминированные сигналы автосканеров</span>
         </div>
         <div id="blindSpotsGrid" class="grid-3"></div>
       </div>
 
-      <div class="card col">
+      <div class="panel col">
         <div class="row-between">
           <div id="trackFilters" class="row"></div>
           <div class="row text-xs">
             <span class="muted">Сортировка:</span>
             <select id="sortSelect" class="select">
-              <option value="ice">По ICE-приоритету (убыв.)</option>
-              <option value="effort">Сначала быстрые победы (Effort ↑)</option>
-              <option value="impact">Сначала макс. польза (Impact ↓)</option>
+              <option value="ice">ICE (убыв.)</option>
+              <option value="effort">Быстрые победы (Effort ↑)</option>
+              <option value="impact">Макс. польза (Impact ↓)</option>
             </select>
           </div>
         </div>
@@ -1314,13 +1386,13 @@ const html = `<!DOCTYPE html>
 
     <!-- TAB 2: KNOWLEDGE -->
     <section id="tab-knowledge" class="tab-panel hidden col">
-      <div class="card col">
+      <div class="panel col">
         <div class="row-between">
           <div>
             <h2 class="title-md">Матрица знаний и интеграций</h2>
-            <div class="text-xs muted">Фактическая глубина знаний агента по проекту: персонализация в docs/memory/ против базовых правил.</div>
+            <div class="text-xs muted">Персонализация правил в docs/memory/ против базовых знаний платформы.</div>
           </div>
-          <input id="knowledgeSearch" type="search" class="input" placeholder="Поиск по домену или фактам..." />
+          <input id="knowledgeSearch" type="search" class="input" placeholder="Фильтр по домену..." />
         </div>
         <div style="overflow-x:auto;">
           <table>
@@ -1341,32 +1413,32 @@ const html = `<!DOCTYPE html>
 
     <!-- TAB 3: BACKLOG -->
     <section id="tab-backlog" class="tab-panel hidden col">
-      <div class="card col">
+      <div class="panel col">
         <div class="row-between">
           <div>
-            <h2 class="title-md">Бэклог проекта и прогресс выполнения</h2>
-            <div class="text-xs muted">Кнопка «Промпт запуска» копирует готовый контракт для Центрального Оркестратора.</div>
+            <h2 class="title-md">Бэклог проекта</h2>
+            <div class="text-xs muted">Копируйте готовый контракт задачи для запуска через Оркестратора.</div>
           </div>
           <input id="backlogSearch" type="search" class="input" placeholder="Фильтр по задачам..." />
         </div>
 
-        <div class="col" style="gap:5px;">
+        <div class="col" style="gap:4px;">
           <div class="row-between text-xs">
             <span class="muted">Общий прогресс</span>
-            <strong id="backlogProgressLabel">0 / 0 (0%)</strong>
+            <strong class="mono" id="backlogProgressLabel">0 / 0 (0%)</strong>
           </div>
           <div class="progress-track">
-            <div id="backlogProgressBar" class="progress-fill" style="width:0%;background:var(--success);"></div>
+            <div id="backlogProgressBar" class="progress-fill" style="width:0%;background:var(--primary);"></div>
           </div>
         </div>
 
         <div class="col">
-          <div class="text-xs muted" style="font-weight:700;text-transform:uppercase;">Открытые задачи</div>
+          <div class="title-md">Открытые задачи</div>
           <div id="openBacklogList" class="col"></div>
         </div>
 
         <div class="col divider">
-          <div class="text-xs muted" style="font-weight:700;text-transform:uppercase;">Недавно закрытые задачи</div>
+          <div class="title-md">Недавно закрытые задачи</div>
           <div id="doneBacklogList" class="grid-2"></div>
         </div>
       </div>
@@ -1375,18 +1447,18 @@ const html = `<!DOCTYPE html>
     <!-- TAB 4: GIT & LOCAL -->
     <section id="tab-git" class="tab-panel hidden col">
       <div class="grid-2">
-        <div class="card col">
+        <div class="panel col">
           <div class="row-between">
             <div>
               <h2 class="title-md" id="gitBranchTitle">Git Graph</h2>
               <div class="text-xs muted" id="gitSummarySub">—</div>
             </div>
-            <span id="gitTreeBadge" class="badge soft-badge-muted">—</span>
+            <span id="gitTreeBadge" class="tag">—</span>
           </div>
           <div id="gitTimeline" class="col" style="gap:0;"></div>
         </div>
 
-        <div class="card col">
+        <div class="panel col">
           <div>
             <h2 class="title-md">Структура D7 (/local/)</h2>
             <div class="text-xs muted">Изолированный кастомный код (ядро /bitrix/ не модифицируется).</div>
@@ -1397,45 +1469,45 @@ const html = `<!DOCTYPE html>
             <div class="subcard"><div class="text-xs muted">urlrewrite</div><div class="kpi-val" id="statUrlrewrite">0</div></div>
             <div class="subcard"><div class="text-xs muted">init хуки</div><div class="kpi-val" id="statInitHooks">0</div></div>
           </div>
-          <div class="col" style="gap:6px;">
-            <div class="text-xs muted" style="font-weight:700;">Namespaces</div>
+          <div class="col" style="gap:5px;">
+            <div class="text-xs muted" style="font-weight:600;">Namespaces</div>
             <div id="nsBadges" class="row"></div>
           </div>
-          <div class="col" style="gap:6px;">
-            <div class="text-xs muted" style="font-weight:700;">Шаблоны сайта</div>
-            <div id="tplList" class="col" style="gap:6px;"></div>
+          <div class="col" style="gap:5px;">
+            <div class="text-xs muted" style="font-weight:600;">Шаблоны сайта</div>
+            <div id="tplList" class="col" style="gap:5px;"></div>
           </div>
-          <div class="col" style="gap:6px;">
-            <div class="text-xs muted" style="font-weight:700;">Публичные AJAX (/local/ajax/)</div>
+          <div class="col" style="gap:5px;">
+            <div class="text-xs muted" style="font-weight:600;">Публичные AJAX (/local/ajax/)</div>
             <div id="ajaxBadges" class="row"></div>
           </div>
         </div>
       </div>
 
-      <div class="card col">
-        <h2 class="title-md">🛡️ Сводка QA Preflight (безопасность и статика)</h2>
+      <div class="panel col">
+        <h2 class="title-md">Сводка QA Preflight (безопасность и статика)</h2>
         <div id="qaFindingsBox" class="col"></div>
       </div>
     </section>
 
     <!-- TAB 5: ECOSYSTEM -->
     <section id="tab-ecosystem" class="tab-panel hidden col">
-      <div class="card col">
+      <div class="panel col">
         <div class="row-between">
           <div>
-            <h2 class="title-md">Модульная экосистема 1С-Битрикс (4 плагина)</h2>
+            <h2 class="title-md">Экосистема 1С-Битрикс (4 плагина)</h2>
             <div class="text-xs muted">core · seo-geo · qa · marketing — независимые модули без npm-зависимостей.</div>
           </div>
-          <span class="badge soft-badge-success">Zero npm · Zero PII</span>
+          <span class="tag tag-strong">Zero npm · Zero PII</span>
         </div>
         <div id="ecosystemGrid" class="grid-2"></div>
       </div>
 
       <div class="grid-2">
-        <div class="card col">
+        <div class="panel col">
           <div class="row-between">
-            <h3 class="title-md">Бюджет стартового контекста</h3>
-            <span id="cbBadge" class="badge soft-badge-muted">—</span>
+            <h3 class="title-md">Бюджет контекста</h3>
+            <span id="cbBadge" class="tag">—</span>
           </div>
           <div class="text-xs muted" id="cbSummary">—</div>
           <div class="progress-track">
@@ -1443,18 +1515,18 @@ const html = `<!DOCTYPE html>
           </div>
           <div id="cbCollisions" class="subcard col" style="gap:4px;"></div>
           <div class="text-xs muted">
-            <strong>Strategic Compact:</strong> вызывайте <code>/compact</code> на границах фаз (после аудита, после реализации, после QA).
+            <strong>Strategic Compact:</strong> вызывайте <code>/compact</code> на границах фаз (после аудита, реализации и QA).
           </div>
         </div>
 
-        <div class="card col">
+        <div class="panel col">
           <div class="row-between">
-            <h3 class="title-md">Маршрутизация моделей и квот</h3>
-            <span id="modelsTimeBadge" class="badge soft-badge-primary mono">—</span>
+            <h3 class="title-md">Маршрутизация моделей</h3>
+            <span id="modelsTimeBadge" class="tag mono">—</span>
           </div>
-          <div id="modelsList" class="col" style="gap:6px;"></div>
-          <div class="col divider" style="gap:6px;">
-            <div class="text-xs muted" style="font-weight:700;">Подключённые MCP-серверы</div>
+          <div id="modelsList" class="col" style="gap:5px;"></div>
+          <div class="col divider" style="gap:5px;">
+            <div class="text-xs muted" style="font-weight:600;">Подключённые MCP-серверы</div>
             <div id="mcpBadges" class="row"></div>
           </div>
         </div>
