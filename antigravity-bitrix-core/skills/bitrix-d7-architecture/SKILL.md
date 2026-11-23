@@ -57,3 +57,10 @@ Never use `$APPLICATION->RestartBuffer()` before `process404()` on standard HTML
 ### 2.7. Event Handling & Agents
 - Register handlers with `\Bitrix\Main\EventManager::getInstance()->addEventHandler(...)` (or `addEventHandlerCompatible` for legacy iblock events).
 - Disable hit-based agents (`check_agents = N`) in production and run `/bitrix/modules/main/tools/cron_events.php` via system cron.
+
+---
+
+## 3. Официальные учебные треки и стандарты качества 1С-Битрикс
+При проектировании, настройке модулей и обучении команды опираться на актуальные разделы:
+- **Академия 1С-Битрикс (Программирование и настройка)**: [`https://academy.1c-bitrix.ru/types/programming/`](https://academy.1c-bitrix.ru/types/programming/) — курсы «Разработчик Bitrix Framework», «Кастомизация публичной части», «Администратор. Бизнес», «Интеграция с 1С», «Композитный сайт», «BitrixVM», «Vue.js и Bitrix Framework».
+- **Монитор качества и FAQ запуска проекта**: [`https://dev.1c-bitrix.ru/support/faq/8366/`](https://dev.1c-bitrix.ru/support/faq/8366/) — эталонные требования по безопасности, правам доступа, производительности, настройкам хостинга и сдаче проекта заказчику.
