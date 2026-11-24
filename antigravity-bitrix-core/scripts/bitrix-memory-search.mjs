@@ -114,8 +114,9 @@ function buildSessionBrief(root) {
     }
   }
 
-  // Open tasks extraction (top 5)
+  // Open tasks extraction (supports rich ### cards AND classic flat - [ ] backlogs)
   const openTasks = [];
+  let richCardsFound = 0;
   const cards = backlogMd.split(/^###\s+/m).slice(1);
   for (const block of cards) {
     const firstLine = block.split(/\r?\n/)[0] || "";
@@ -123,6 +124,7 @@ function buildSessionBrief(root) {
     if (!hm) continue;
     const checks = [...block.matchAll(/^\s*[-*]\s+\[([ xX])\]/gm)];
     if (checks.length === 0) continue;
+    richCardsFound++;
     const doneCount = checks.filter((c) => c[1].toLowerCase() === "x").length;
     if (doneCount === checks.length) continue;
     const qm = block.match(/\[(Q[1-4])/i);
@@ -133,9 +135,25 @@ function buildSessionBrief(root) {
       checklist: `${doneCount}/${checks.length}`,
     });
   }
+  if (richCardsFound === 0) {
+    let idx = 1;
+    for (const ln of backlogMd.split(/\r?\n/)) {
+      const m = ln.match(/^\s*[-*]\s+\[\s\]\s+(.+)$/);
+      if (!m) continue;
+      const clean = m[1].replace(/\*\*/g, "").trim();
+      const idm = clean.match(/`?(#\d+|[A-Z]+-\d+)`?/);
+      openTasks.push({
+        id: idm ? idm[1] : `#${idx}`,
+        title: clean,
+        quadrant: "Q2",
+        checklist: "0/1",
+      });
+      idx++;
+    }
+  }
 
-  // Recent ADRs
-  const adrs = [...decisionsMd.matchAll(/^###\s+(ADR-\d+[^\n]*)/gm)].map((m) => m[1].trim()).slice(-5);
+  // Recent ADRs (supports both ## ADR- and ### ADR-)
+  const adrs = [...decisionsMd.matchAll(/^#{2,3}\s+(ADR-\d+[^\n]*)/gm)].map((m) => m[1].trim()).slice(-5);
 
   // Latest daily log
   const dailyDir = path.join(root, "docs", "daily");
