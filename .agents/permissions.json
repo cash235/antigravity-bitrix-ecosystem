@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "profile": "local_dev",
+  "updatedAt": "2026-11-24",
+  "rules": {
+    "outside_workspace": {
+      "level": "read_only",
+      "note": "Чтение глобальных плагинов/шаблонов; запись в ~/.gemini только через install-ecosystem.ps1"
+    },
+    "internet": {
+      "level": "read_only",
+      "note": "Документация Antigravity/Bitrix и проверка статуса GitHub CI"
+    },
+    "terminal": {
+      "level": "allow",
+      "note": "node --check, VM-тесты, локальная переустановка плагинов, git commit"
+    },
+    "ssh": {
+      "level": "deny",
+      "note": "Удалённые серверы в репозитории плагинов не используются"
+    },
+    "database": {
+      "level": "deny",
+      "note": "База данных в репозитории плагинов отсутствует"
+    },
+    "deploy": {
+      "level": "ask",
+      "note": "Публикация релизов и git push на GitHub по запросу оператора"
+    }
+  },
+  "notes": "Политика границ автономности для разработки экосистемы antigravity-bitrix-*."
+}

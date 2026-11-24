@@ -139,6 +139,26 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
       gap: 8px;
       padding: 2px 0;
     }
+    .meter-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 2px 0;
+    }
+    .meter-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--vscode-panel-border, rgba(128,128,128,0.22));
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--vscode-button-background, #3d59a1);
+    }
+    .meter-fill.ok { background: var(--vscode-testing-iconPassed, #73daca); }
+    .meter-fill.warn { background: var(--vscode-editorWarning-foreground, #e0af68); }
     .muted { color: var(--vscode-descriptionForeground); }
     .mono { font-family: var(--vscode-editor-font-family, ui-monospace, Consolas, monospace); font-size: 11.5px; }
     .status-inline { display: inline-flex; align-items: center; gap: 5px; }
@@ -165,21 +185,62 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
   ${errorText
       ? `<div class="err-box"><div style="font-weight:600;margin-bottom:2px;">Ошибка сканирования</div><div class="muted">${esc(errorText)}</div></div>`
       : !rootDir
-        ? `<div class="section"><div class="section-title">Проект</div><div class="muted">Откройте папку 1С-Битрикс проекта в IDE.</div></div>`
+        ? `<div class="section"><div class="section-title">Проект</div><div class="muted">Откройте папку проекта в IDE.</div></div>`
         : snapshot
-          ? `
+          ? (() => {
+              const readyPct = Math.max(0, Math.min(100, Number(snapshot.readinessScore || 0)));
+              const blPct = Math.max(0, Math.min(100, Number(snapshot.backlog.completionPct || 0)));
+              const sp = snapshot.setupPipeline || null;
+              const spPct = sp && sp.totalSteps ? Math.round((sp.completedCount / sp.totalSteps) * 100) : 0;
+              const nextSprint = snapshot.velocity && Array.isArray(snapshot.velocity.sprints) && snapshot.velocity.sprints.length > 0
+                ? snapshot.velocity.sprints[0]
+                : null;
+              const permLabels = {
+                safe_default: "безопасный",
+                local_dev: "локальная разр.",
+                staging_full: "staging",
+                custom: "свой профиль",
+              };
+              const permText = snapshot.permissions && snapshot.permissions.configured
+                ? (permLabels[snapshot.permissions.profile] || snapshot.permissions.profile)
+                : "не настроен";
+              return `
   <div class="section">
     <div class="section-title">Сводка · ${esc(snapshot.projectName)}</div>
     <div class="kv-list">
-      <div class="kv-row"><span class="muted">Готовность</span><span class="mono">${esc(snapshot.readinessScore)}/100</span></div>
+      <div class="meter-block">
+        <div class="kv-row"><span class="muted">Готовность проекта</span><span class="mono">${readyPct}/100</span></div>
+        <div class="meter-track"><div class="meter-fill ${readyPct >= 80 ? "ok" : readyPct >= 50 ? "" : "warn"}" style="width:${readyPct}%"></div></div>
+      </div>
+      <div class="meter-block">
+        <div class="kv-row"><span class="muted">Бэклог</span><span class="mono">${esc(snapshot.backlog.doneCount)} выполн. / ${esc(snapshot.backlog.openCount)} откр. (${blPct}%)</span></div>
+        <div class="meter-track"><div class="meter-fill ok" style="width:${blPct}%"></div></div>
+      </div>
+      ${sp && !sp.allDone ? `
+      <div class="meter-block">
+        <div class="kv-row"><span class="muted">Настройка проекта</span><span class="mono">${esc(sp.completedCount)}/${esc(sp.totalSteps)} шагов</span></div>
+        <div class="meter-track"><div class="meter-fill" style="width:${spPct}%"></div></div>
+      </div>` : ""}
       <div class="kv-row"><span class="muted">QA Preflight</span><span class="status-inline mono"><span class="dot ${qaDot}"></span>${esc(qaText)}</span></div>
-      <div class="kv-row"><span class="muted">Бэклог</span><span class="mono">${esc(snapshot.backlog.doneCount)} done / ${esc(snapshot.backlog.openCount)} open</span></div>
-      <div class="kv-row"><span class="muted">Память</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} daily</span></div>
+      <div class="kv-row"><span class="muted">Память</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} логов</span></div>
       <div class="kv-row"><span class="muted">Ритм</span><span class="mono">${snapshot.velocity ? esc(snapshot.velocity.weeklyCapacityHours) + " ч/нед" : "—"}</span></div>
-      <div class="kv-row"><span class="muted">Границы</span><span class="mono">${snapshot.permissions ? esc(snapshot.permissions.profile) : "safe"}</span></div>
-      <div class="kv-row"><span class="muted">Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} tok</span></div>
+      <div class="kv-row"><span class="muted">Границы</span><span class="mono">${esc(permText)}</span></div>
+      <div class="kv-row"><span class="muted">Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} ток.</span></div>
     </div>
   </div>
+
+  ${nextSprint ? `
+  <div class="section">
+    <div class="section-title">Текущий спринт</div>
+    <div class="kv-list">
+      <div style="font-weight:600;">${esc(nextSprint.name)}</div>
+      <div class="meter-block">
+        <div class="kv-row"><span class="muted">Загрузка (${esc(nextSprint.tasksCount)} зад. · ~${esc(nextSprint.estHours)}ч)</span><span class="mono">${esc(nextSprint.loadPct)}%</span></div>
+        <div class="meter-track"><div class="meter-fill ${nextSprint.overloaded ? "warn" : ""}" style="width:${Math.min(100, nextSprint.loadPct || 0)}%"></div></div>
+      </div>
+      <div class="kv-row"><span class="muted">Прогноз дедлайна</span><span class="mono">${esc(nextSprint.projectedDeadline)}</span></div>
+    </div>
+  </div>` : ""}
 
   <div class="section">
     <div class="section-title">Плагины (4)</div>
@@ -187,24 +248,29 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
       ${badges
             .map(
               (b) =>
-                `<div class="kv-row"><span class="status-inline mono"><span class="dot ${b.ver ? "dot-ok" : "dot-muted"}"></span>${esc(b.label)}</span><span class="mono muted">${b.ver ? "v" + esc(b.ver) : "off"}</span></div>`
+                `<div class="kv-row"><span class="status-inline mono"><span class="dot ${b.ver ? "dot-ok" : "dot-muted"}"></span>${esc(b.label)}</span><span class="mono muted">${b.ver ? "v" + esc(b.ver) : "выкл"}</span></div>`
             )
             .join("")}
     </div>
-  </div>`
+  </div>`;
+            })()
           : `<div class="muted">Загрузка снапшота...</div>`
     }
 
   <div class="section">
     <div class="section-title">Действия</div>
     <div class="actions-col">
+      <button type="button" class="btn" data-cmd="openPermissions">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+        Настроить границы и права
+      </button>
       <button type="button" class="btn" data-cmd="refresh">
         <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.7M13.5 2.5v2.8h-2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Обновить скан
       </button>
       <button type="button" class="btn" data-cmd="initProject">
         ${snapshot && snapshot.setupPipeline && snapshot.setupPipeline.isProjectInitialized
-          ? `<span class="dot dot-ok"></span>Инициализирован (профиль)`
+          ? `<span class="dot dot-ok"></span>Настроено (профиль)`
           : `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>Инициализировать проект`
         }
       </button>
@@ -255,27 +321,85 @@ function activate(context) {
     }
   }
 
-  async function renderDashboardIntoPanel(panel) {
+  async function renderDashboardIntoPanel(panel, initialTab) {
     const rootDir = getWorkspaceRoot();
     if (!rootDir) {
-      panel.webview.html = `<body style="font-family:sans-serif;padding:24px;"><h2>Откройте папку проекта 1С-Битрикс</h2><p>Выберите workspace в Antigravity IDE и нажмите «Обновить».</p></body>`;
+      panel.webview.html = `<body style="font-family:sans-serif;padding:24px;"><h2>Откройте папку проекта</h2><p>Выберите workspace в Antigravity IDE и нажмите «Обновить».</p></body>`;
       return;
     }
-    panel.webview.html = `<body style="font-family:sans-serif;padding:24px;opacity:0.85;"><h3>⏳ Сканирование проекта и сборка Command Center Dashboard...</h3></body>`;
+    panel.webview.html = `<body style="font-family:sans-serif;padding:24px;opacity:0.85;"><h3>Сканирование проекта и сборка Command Center Dashboard...</h3></body>`;
     try {
       const renderScript = path.join(CORE_SCRIPTS, "bitrix-dashboard-render.mjs");
       const html = await runNodeScript(renderScript, [rootDir, "--mode", "webview", "--stdout"], rootDir);
       panel.webview.html = html;
+      if (initialTab) {
+        setTimeout(() => {
+          panel.webview.postMessage({ type: "switchTab", tab: initialTab });
+        }, 120);
+      }
       refreshSnapshot();
     } catch (err) {
       panel.webview.html = `<body style="font-family:sans-serif;padding:24px;color:#ef4444;"><h3>Ошибка сборки дашборда</h3><pre>${esc(err.message)}</pre></body>`;
     }
   }
 
-  async function openDashboardCommand() {
+  async function savePermissionsToWorkspace(profile, rules) {
+    const rootDir = getWorkspaceRoot();
+    if (!rootDir) return;
+    const target = path.join(rootDir, ".agents", "permissions.json");
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      schemaVersion: "1.0",
+      profile: profile || "custom",
+      updatedAt: today,
+      rules: rules || {},
+      notes: "Настроено визуально через 1C-Bitrix Command Center. Агент и все субагенты обязаны соблюдать эти границы.",
+    };
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, JSON.stringify(payload, null, 2) + "\n", "utf8");
+    vscode.window.showInformationMessage(`Границы и разрешения сохранены в .agents/permissions.json (${payload.profile}).`);
+    await refreshSnapshot();
+    if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "ecosystem");
+  }
+
+  async function saveVelocityToWorkspace(hoursPerDay, daysPerWeek) {
+    const rootDir = getWorkspaceRoot();
+    if (!rootDir) return;
+    const target = path.join(rootDir, "docs", "memory", "velocity.json");
+    const payload = {
+      schemaVersion: "1.0",
+      targetHoursPerDay: Math.max(0.5, Math.min(16, Number(hoursPerDay) || 2)),
+      activeDaysPerWeek: Math.max(1, Math.min(7, Number(daysPerWeek) || 5)),
+      sprintLengthDays: 7,
+      autoCalibrateFromHistory: true,
+      notes: "Настроено через Command Center Dashboard для расчёта ёмкости спринтов и дедлайнов.",
+    };
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, JSON.stringify(payload, null, 2) + "\n", "utf8");
+    vscode.window.showInformationMessage(
+      `Ритм обновлён: ${payload.targetHoursPerDay} ч/день × ${payload.activeDaysPerWeek} дн/нед (docs/memory/velocity.json).`
+    );
+    await refreshSnapshot();
+    if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "backlog");
+  }
+
+  async function openWorkspaceFile(relPath) {
+    const rootDir = getWorkspaceRoot();
+    if (!rootDir || !relPath) return;
+    const full = path.resolve(rootDir, relPath);
+    if (!full.startsWith(path.resolve(rootDir))) return;
+    if (!fs.existsSync(full)) {
+      vscode.window.showWarningMessage(`Файл ${relPath} ещё не создан — сначала нажмите «Сохранить».`);
+      return;
+    }
+    const doc = await vscode.workspace.openTextDocument(full);
+    await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside);
+  }
+
+  async function openDashboardCommand(initialTab) {
     if (dashboardPanel) {
       dashboardPanel.reveal(vscode.ViewColumn.One);
-      await renderDashboardIntoPanel(dashboardPanel);
+      await renderDashboardIntoPanel(dashboardPanel, initialTab);
       return;
     }
     dashboardPanel = vscode.window.createWebviewPanel(
@@ -301,9 +425,15 @@ function activate(context) {
         await initProjectCommand();
       } else if (msg.type === "runQaPreflight") {
         await runQaPreflightCommand();
+      } else if (msg.type === "savePermissions") {
+        await savePermissionsToWorkspace(msg.profile, msg.rules);
+      } else if (msg.type === "saveVelocity") {
+        await saveVelocityToWorkspace(msg.hoursPerDay, msg.daysPerWeek);
+      } else if (msg.type === "openFile") {
+        await openWorkspaceFile(msg.path);
       }
     });
-    await renderDashboardIntoPanel(dashboardPanel);
+    await renderDashboardIntoPanel(dashboardPanel, initialTab);
   }
 
   async function initProjectCommand() {
@@ -383,6 +513,7 @@ function activate(context) {
       webviewView.webview.onDidReceiveMessage(async (msg) => {
         if (!msg || !msg.type) return;
         if (msg.type === "openDashboard") await openDashboardCommand();
+        else if (msg.type === "openPermissions") await openDashboardCommand("ecosystem");
         else if (msg.type === "refresh") {
           await refreshSnapshot();
           if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel);

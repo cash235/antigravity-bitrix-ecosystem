@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.0",
+  "targetHoursPerDay": 2.0,
+  "activeDaysPerWeek": 5,
+  "sprintLengthDays": 7,
+  "autoCalibrateFromHistory": true,
+  "notes": "Рабочий ритм развития экосистемы 1C-Bitrix Antigravity Plugins."
+}

@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "path": "~/.gemini/config/plugins",
+      "include_only": [
+        "antigravity-bitrix-core"
+      ]
+    }
+  ]
+}

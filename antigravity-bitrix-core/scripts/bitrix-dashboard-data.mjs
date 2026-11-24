@@ -960,7 +960,7 @@ if (memoryFiles.rootAgents.exists) score += 10;
 if (memoryFiles.codemap.exists && codemapText.length > 500) score += 20;
 if (memoryFiles.decisions.exists && adrCount > 0) score += 15;
 if (memoryFiles.status.exists) score += 10;
-if (memoryFiles.backlog.exists) score += 10;
+if (memoryFiles.backlog.exists || fs.existsSync(path.join(rootDir, "BACKLOG_ECOSYSTEM.md"))) score += 10;
 if (gitInfo.isRepo) score += 15;
 if (gitInfo.isRepo && gitInfo.uncommittedCount === 0) score += 5;
 if (ecosystem.core) score += 10;

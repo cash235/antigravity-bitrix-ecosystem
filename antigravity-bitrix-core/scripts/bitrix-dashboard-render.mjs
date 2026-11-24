@@ -394,13 +394,13 @@ const viewModel = {
   knowledge: Array.isArray(overlay.knowledge) && overlay.knowledge.length > 0
     ? overlay.knowledge
     : (snapshot.knowledgeMatrix || []).map((k) => ({
-        label: k.label,
-        category: k.category,
-        status: k.status === "personalized" ? "ok" : k.status === "missing" ? "error" : "warn",
-        statusLabel: k.statusLabel,
-        evidence: k.evidence,
-        personalizePrompt: k.personalizePrompt || null,
-      })),
+      label: k.label,
+      category: k.category,
+      status: k.status === "personalized" ? "ok" : k.status === "missing" ? "error" : "warn",
+      statusLabel: k.statusLabel,
+      evidence: k.evidence,
+      personalizePrompt: k.personalizePrompt || null,
+    })),
   git: snapshot.git || {
     isRepo: false,
     branch: "—",
@@ -801,7 +801,7 @@ const clientScript = `
     const fb = item.fallbackModel ? " → " + esc(item.fallbackModel) + q2 : "";
     return (
       '<span class="tag mono">' + esc(item.uiModel || "Auto") + q1 + fb + "</span>" +
-      '<span class="tag mono" title="Слот invoke_subagent">subagent: ' + esc(item.subagent || "inherit") + "</span>"
+      '<span class="tag mono" title="Слот субагента">субагент: ' + esc(item.subagent || "inherit") + "</span>"
     );
   }
 
@@ -833,7 +833,7 @@ const clientScript = `
 
   function sizeTimeBadge(size, est, actual) {
     const parts = [esc(size || "M")];
-    if (est != null) parts.push("Est " + esc(est) + "ч");
+    if (est != null) parts.push("Оценка " + esc(est) + "ч");
     if (actual != null) parts.push("Факт " + esc(actual) + "ч");
     return '<span class="tag mono">' + parts.join(" · ") + "</span>";
   }
@@ -844,7 +844,7 @@ const clientScript = `
     document.getElementById("projectNameEl").textContent = DATA.projectName;
     document.getElementById("scanTimeEl").textContent = "Скан: " + DATA.generatedAt;
     document.getElementById("kpiReadiness").textContent = DATA.readinessScore + "/100";
-    document.getElementById("kpiMemoryMeta").textContent = DATA.adrCount + " ADR · " + DATA.dailyCount + " daily";
+    document.getElementById("kpiMemoryMeta").textContent = DATA.adrCount + " ADR · " + DATA.dailyCount + " логов";
 
     const qaEl = document.getElementById("kpiQa");
     const qaMeta = document.getElementById("kpiQaMeta");
@@ -853,18 +853,18 @@ const clientScript = `
       const high = (DATA.qaPreflight.high || []).length;
       qaEl.textContent = DATA.qaPreflight.verdict + (crit ? " (" + crit + ")" : "");
       qaEl.className = "kpi-val " + (crit > 0 ? "text-error" : high > 0 ? "text-warning" : "text-success");
-      qaMeta.textContent = crit + " crit · " + high + " high";
+      qaMeta.textContent = crit + " крит. · " + high + " выс.";
     } else {
-      qaEl.textContent = "N/A";
-      qaMeta.textContent = "qa плагин не запущен";
+      qaEl.textContent = "Н/Д";
+      qaMeta.textContent = "плагин QA не активен";
     }
 
     document.getElementById("kpiBacklog").textContent = DATA.backlog.completionPct + "%";
-    document.getElementById("kpiBacklogMeta").textContent = DATA.backlog.doneCount + " done · " + DATA.backlog.openCount + " open";
+    document.getElementById("kpiBacklogMeta").textContent = DATA.backlog.doneCount + " выполн. · " + DATA.backlog.openCount + " откр.";
 
     const tok = DATA.contextBudget.totalBaselineOverheadTokens || 0;
     const tokEl = document.getElementById("kpiContext");
-    tokEl.textContent = "~" + (tok >= 1000 ? (tok / 1000).toFixed(1) + "k" : tok) + " tok";
+    tokEl.textContent = "~" + (tok >= 1000 ? (tok / 1000).toFixed(1) + "k" : tok) + " ток.";
     tokEl.className = "kpi-val " + (DATA.contextBudget.status === "needs_trim" ? "text-warning" : "text-success");
     document.getElementById("kpiContextMeta").textContent =
       DATA.contextBudget.status === "needs_trim" ? "нужна чистка" : "в норме";
@@ -911,14 +911,70 @@ const clientScript = `
       "</div>";
   }
 
+  const PERM_PRESETS = {
+    safe_default: {
+      outside_workspace: { level: "deny", note: "Только внутри текущей папки проекта" },
+      internet: { level: "read_only", note: "Только чтение официальной документации и live SEO/QA-чеки" },
+      terminal: { level: "read_only", note: "Проверки синтаксиса и git status/diff; мутации через подтверждение" },
+      ssh: { level: "deny", note: "Подключение по SSH запрещено без явного разрешения" },
+      database: { level: "deny", note: "Прямые запросы к БД запрещены; миграции через D7" },
+      deploy: { level: "ask", note: "Любой git push / деплой только после подтверждения" },
+    },
+    local_dev: {
+      outside_workspace: { level: "read_only", note: "Чтение глобальных плагинов/шаблонов; запись только в проекте" },
+      internet: { level: "read_only", note: "Документация, read-only проверки URL и API" },
+      terminal: { level: "allow", note: "Локальные сборки, тесты, git commit (без деструктивных команд)" },
+      ssh: { level: "ask", note: "Только по явному подтверждению оператора" },
+      database: { level: "read_only", note: "Только SELECT / инспекция схемы на локальном стенде" },
+      deploy: { level: "ask", note: "Push / деплой только после явного подтверждения" },
+    },
+    staging_full: {
+      outside_workspace: { level: "read_only", note: "Чтение внешних конфигов; запись только в проекте" },
+      internet: { level: "allow", note: "Документация, внешние API и staging-проверки" },
+      terminal: { level: "allow", note: "Полный локальный CLI и тестовые скрипты" },
+      ssh: { level: "staging_rw", note: "Чтение/запись на staging; на prod строго ask/read_only" },
+      database: { level: "staging_rw", note: "Чтение/миграции на staging; на prod строго ask" },
+      deploy: { level: "staging_only", note: "Автодеплой допустим только на staging; prod строго через подтверждение" },
+    },
+  };
+
+  const PERM_LEVEL_OPTIONS = [
+    { v: "deny", l: "Запрещено (deny)" },
+    { v: "read_only", l: "Только чтение (read_only)" },
+    { v: "ask", l: "Спрашивать (ask)" },
+    { v: "staging_rw", l: "Staging чтение/запись (staging_rw)" },
+    { v: "staging_only", l: "Только Staging (staging_only)" },
+    { v: "allow", l: "Разрешено (allow)" },
+  ];
+
+  const PERM_AXIS_META = {
+    outside_workspace: { title: "Файлы вне проекта", hint: "Чтение и запись за пределами рабочей папки" },
+    internet: { title: "Интернет / API", hint: "Документация, live SEO/QA и внешние запросы" },
+    terminal: { title: "Терминал / CLI", hint: "Синтаксис, тесты, скрипты и git" },
+    ssh: { title: "SSH / Серверы", hint: "Подключение к удалённым серверам" },
+    database: { title: "База данных", hint: "Запросы SELECT и миграции схемы" },
+    deploy: { title: "Деплой / Git Push", hint: "Отправка на staging, prod и внешние сервисы" },
+  };
+
+  let draftPermissions = {
+    profile: (DATA.permissions && DATA.permissions.configured ? DATA.permissions.profile : "safe_default"),
+    rules: JSON.parse(JSON.stringify((DATA.permissions && DATA.permissions.rules) || PERM_PRESETS.safe_default)),
+  };
+
   function renderVelocityAndSprints() {
     const box = document.getElementById("sprintsPanel");
     if (!box || !DATA.velocity) return;
     const v = DATA.velocity;
-    document.getElementById("velSourceBadge").textContent = v.source || "default";
+    const srcEl = document.getElementById("velSourceBadge");
+    if (srcEl) srcEl.textContent = v.source || "по умолчанию";
     document.getElementById("velSummaryText").textContent =
       "Ритм: " + v.hoursPerDay + " ч/день × " + v.daysPerWeek + " дн/нед = " + v.weeklyCapacityHours +
-      " ч/нед · Коэфф. точности (Actual/Est): " + v.calibrationFactor + "x";
+      " ч/нед · Коэфф. точности (Факт/Оценка): " + v.calibrationFactor + "x";
+
+    const hIn = document.getElementById("velHoursInput");
+    const dIn = document.getElementById("velDaysInput");
+    if (hIn && !hIn.dataset.init) { hIn.value = String(v.hoursPerDay || 2); hIn.dataset.init = "1"; }
+    if (dIn && !dIn.dataset.init) { dIn.value = String(v.daysPerWeek || 5); dIn.dataset.init = "1"; }
 
     const listEl = document.getElementById("sprintsGrid");
     if (!v.sprints || v.sprints.length === 0) {
@@ -936,7 +992,7 @@ const clientScript = `
           '<span class="tag mono"><span class="dot ' + dot + '"></span>Дедлайн: ' + esc(sp.projectedDeadline) + "</span>" +
           "</div>" +
           '<div class="row-between text-xs muted mono">' +
-          "<span>" + sp.tasksCount + " задач · Est " + sp.estHours + "ч" + (sp.q1Count ? " · Q1:" + sp.q1Count : "") + "</span>" +
+          "<span>" + sp.tasksCount + " зад. · Оценка " + sp.estHours + "ч" + (sp.q1Count ? " · Q1:" + sp.q1Count : "") + "</span>" +
           "<span>" + sp.loadPct + "% нед." + (sp.overloaded ? " (перегруз)" : "") + "</span>" +
           "</div>" +
           '<div class="progress-track"><div class="progress-fill" style="width:' + pctWidth + '%;background:' + (sp.overloaded ? "var(--warning)" : "var(--primary)") + ';"></div></div>' +
@@ -948,42 +1004,48 @@ const clientScript = `
 
   function renderPermissionsMatrix() {
     const grid = document.getElementById("permissionsGrid");
-    if (!grid || !DATA.permissions) return;
-    const p = DATA.permissions;
+    if (!grid) return;
+    const p = DATA.permissions || { configured: false, profile: "unconfigured" };
     const badge = document.getElementById("permProfileBadge");
+    const profNames = { safe_default: "безопасный", local_dev: "локальная разработка", staging_full: "staging", custom: "настроен вручную" };
     if (badge) {
-      badge.textContent = p.configured ? "профиль: " + p.profile : "не настроен (safe fallback)";
+      badge.textContent = p.configured
+        ? "профиль: " + (profNames[draftPermissions.profile] || draftPermissions.profile)
+        : "не сохранено (черновик: " + (profNames[draftPermissions.profile] || draftPermissions.profile) + ")";
       badge.className = "tag mono " + (p.configured ? "tag-success" : "tag-warning");
     }
-    const labels = {
-      outside_workspace: "Файлы вне проекта",
-      internet: "Интернет / API",
-      terminal: "Терминал / CLI",
-      ssh: "SSH / Серверы",
-      database: "База данных",
-      deploy: "Деплой / Git Push",
-    };
-    const keys = Object.keys(labels);
+
+    document.querySelectorAll("[data-perm-preset]").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.permPreset === draftPermissions.profile ? "true" : "false");
+    });
+
+    const keys = Object.keys(PERM_AXIS_META);
     grid.innerHTML = keys
       .map(function (k) {
-        const rule = (p.rules && p.rules[k]) || { level: "ask", note: "Не задано" };
+        const meta = PERM_AXIS_META[k];
+        const rule = (draftPermissions.rules && draftPermissions.rules[k]) || { level: "ask", note: meta.hint };
         const lvl = String(rule.level || "ask");
         const dot = lvl === "deny" ? "dot-err" : lvl === "allow" ? "dot-ok" : "dot-warn";
+        const optsHtml = PERM_LEVEL_OPTIONS.map(function (o) {
+          return '<option value="' + esc(o.v) + '"' + (o.v === lvl ? " selected" : "") + ">" + esc(o.l) + "</option>";
+        }).join("");
         return (
-          '<div class="subcard col" style="gap:4px;">' +
+          '<div class="subcard col" style="gap:6px;">' +
           '<div class="row-between">' +
-          '<strong class="text-xs">' + esc(labels[k]) + "</strong>" +
-          '<span class="tag tag-strong mono"><span class="dot ' + dot + '"></span>' + esc(lvl) + "</span>" +
+          '<strong class="text-xs"><span class="dot ' + dot + '" style="margin-right:5px;"></span>' + esc(meta.title) + "</strong>" +
+          '<span class="text-xs mono muted">' + esc(k) + "</span>" +
           "</div>" +
-          '<div class="text-xs muted">' + esc(rule.note || "") + "</div>" +
+          '<select class="select perm-axis-select" data-perm-axis="' + esc(k) + '" style="width:100%;">' + optsHtml + "</select>" +
+          '<div class="text-xs muted">' + esc(rule.note || meta.hint) + "</div>" +
           "</div>"
         );
       })
       .join("");
 
-    const permPrompt =
-      "Настрой файл .agents/permissions.json для этого проекта: уточни у меня допустимые уровни (deny / read_only / ask / staging_rw / staging_only / allow) по 6 осям (outside_workspace, internet, terminal, ssh, database, deploy) и сохрани политику.";
-    promptRegistry.set("perm:configure", { text: permPrompt, label: "Промпт настройки разрешений скопирован" });
+    const saveBtn = document.getElementById("savePermBtn");
+    if (saveBtn) {
+      saveBtn.textContent = vscode ? "Сохранить в .agents/permissions.json" : "Скопировать JSON разрешений";
+    }
   }
 
   function renderBlindSpots() {
@@ -1348,13 +1410,13 @@ const clientScript = `
     const treeBadge = document.getElementById("gitTreeBadge");
     if (!DATA.git.isRepo) {
       treeBadge.className = "tag tag-warning";
-      treeBadge.textContent = "No Git";
+      treeBadge.textContent = "Нет Git";
     } else if (DATA.git.uncommittedCount === 0) {
       treeBadge.className = "tag tag-success";
-      treeBadge.textContent = "Clean Tree";
+      treeBadge.textContent = "Чистое дерево";
     } else {
       treeBadge.className = "tag tag-warning";
-      treeBadge.textContent = DATA.git.uncommittedCount + " Uncommitted";
+      treeBadge.textContent = "Незакоммичено: " + DATA.git.uncommittedCount;
     }
 
     const tl = document.getElementById("gitTimeline");
@@ -1450,12 +1512,12 @@ const clientScript = `
           '<div class="subcard col" style="gap:7px;">' +
           '<div class="row-between">' +
           '<div><div style="font-weight:600;">' + esc(p.title) + '</div><div class="mono text-xs muted">' + esc(p.name) + "</div></div>" +
-          '<span class="tag tag-strong mono"><span class="dot ' + dot + '"></span>' + (p.installed ? "v" + esc(p.version) : "OFF") + "</span>" +
+          '<span class="tag tag-strong mono"><span class="dot ' + dot + '"></span>' + (p.installed ? "v" + esc(p.version) : "выкл") + "</span>" +
           "</div>" +
           '<div class="row text-xs muted">' +
           "<span>Скиллы: <strong>" + p.skills.length + "</strong></span><span>·</span>" +
           "<span>Агенты: <strong>" + p.agents.length + "</strong></span><span>·</span>" +
-          "<span>Rules: <strong>~" + p.rulesTok + " tok</strong></span>" +
+          "<span>Правила: <strong>~" + p.rulesTok + " ток.</strong></span>" +
           "</div>" +
           '<div class="row">' +
           p.skills.map(function (s) { return '<span class="tag mono">' + esc(s) + "</span>"; }).join("") +
@@ -1467,10 +1529,11 @@ const clientScript = `
 
     const cb = DATA.contextBudget;
     const pct = Math.min(100, Math.round(((cb.totalBaselineOverheadTokens || 0) / 10000) * 100));
-    document.getElementById("cbBadge").textContent = "~" + cb.totalBaselineOverheadTokens + " tok · " + cb.status;
+    const cbStatusRu = cb.status === "needs_trim" ? "нужна чистка" : "в норме";
+    document.getElementById("cbBadge").textContent = "~" + cb.totalBaselineOverheadTokens + " ток. · " + cbStatusRu;
     document.getElementById("cbBadge").className = "tag " + (cb.status === "needs_trim" ? "tag-warning" : "tag-success");
     document.getElementById("cbSummary").textContent =
-      "Скиллов: " + cb.skillListingsCount + " · Rules: ~" + cb.alwaysOnRulesTokens + " tok · Коллизий: " + (cb.duplicateSkillCollisions || []).length;
+      "Скиллов: " + cb.skillListingsCount + " · Правила: ~" + cb.alwaysOnRulesTokens + " ток. · Коллизий: " + (cb.duplicateSkillCollisions || []).length;
     document.getElementById("cbBar").style.width = pct + "%";
     document.getElementById("cbBar").style.background = cb.status === "needs_trim" ? "var(--warning)" : "var(--primary)";
 
@@ -1550,6 +1613,44 @@ const clientScript = `
       return;
     }
 
+    const permPresetBtn = ev.target.closest("[data-perm-preset]");
+    if (permPresetBtn && permPresetBtn.dataset.permPreset) {
+      const pName = permPresetBtn.dataset.permPreset;
+      if (PERM_PRESETS[pName]) {
+        draftPermissions.profile = pName;
+        draftPermissions.rules = JSON.parse(JSON.stringify(PERM_PRESETS[pName]));
+        renderPermissionsMatrix();
+        showToast("Выбран пресет «" + pName + "» — нажмите «Сохранить»");
+      }
+      return;
+    }
+
+    if (ev.target.closest("#savePermBtn")) {
+      if (vscode) {
+        vscode.postMessage({ type: "savePermissions", profile: draftPermissions.profile, rules: draftPermissions.rules });
+      } else {
+        const jsonStr = JSON.stringify({ schemaVersion: "1.0", profile: draftPermissions.profile, rules: draftPermissions.rules }, null, 2);
+        copyText("Сохрани этот конфиг в .agents/permissions.json:\\n" + jsonStr, "Конфиг .agents/permissions.json скопирован");
+      }
+      return;
+    }
+
+    if (ev.target.closest("#openPermJsonBtn")) {
+      if (vscode) vscode.postMessage({ type: "openFile", path: ".agents/permissions.json" });
+      return;
+    }
+
+    if (ev.target.closest("#saveVelBtn")) {
+      const h = Number((document.getElementById("velHoursInput") || {}).value || 2);
+      const d = Number((document.getElementById("velDaysInput") || {}).value || 5);
+      if (vscode) {
+        vscode.postMessage({ type: "saveVelocity", hoursPerDay: h, daysPerWeek: d });
+      } else {
+        copyText("Обнови docs/memory/velocity.json: targetHoursPerDay=" + h + ", activeDaysPerWeek=" + d, "Промпт обновления ритма скопирован");
+      }
+      return;
+    }
+
     const ideBtn = ev.target.closest("[data-ide-action]");
     if (ideBtn && vscode) {
       vscode.postMessage({ type: ideBtn.dataset.ideAction });
@@ -1559,6 +1660,23 @@ const clientScript = `
     if (ev.target.id === "closeCopyModal" || ev.target.id === "copyModal") {
       const modal = document.getElementById("copyModal");
       if (modal) modal.classList.add("hidden");
+    }
+  });
+
+  document.addEventListener("change", function (ev) {
+    const sel = ev.target.closest(".perm-axis-select");
+    if (sel && sel.dataset.permAxis) {
+      const axis = sel.dataset.permAxis;
+      if (!draftPermissions.rules[axis]) draftPermissions.rules[axis] = { level: sel.value, note: "" };
+      draftPermissions.rules[axis].level = sel.value;
+      draftPermissions.profile = "custom";
+      renderPermissionsMatrix();
+    }
+  });
+
+  window.addEventListener("message", function (ev) {
+    if (ev.data && ev.data.type === "switchTab" && ev.data.tab) {
+      switchTab(ev.data.tab);
     }
   });
 
@@ -1782,7 +1900,12 @@ const html = `<!DOCTYPE html>
             <h2 class="title-md">Спринты, ритм и дедлайны</h2>
             <div id="velSummaryText" class="text-xs muted">—</div>
           </div>
-          <span id="velSourceBadge" class="tag mono">—</span>
+          <div class="row text-xs">
+            <label class="muted">ч/день <input id="velHoursInput" type="number" step="0.5" min="0.5" max="16" class="input mono" style="width:58px;" /></label>
+            <label class="muted">дн/нед <input id="velDaysInput" type="number" step="1" min="1" max="7" class="input mono" style="width:48px;" /></label>
+            <button type="button" id="saveVelBtn" class="btn">Сохранить ритм</button>
+            <span id="velSourceBadge" class="tag mono">—</span>
+          </div>
         </div>
         <div id="sprintsGrid" class="grid-3"></div>
       </div>
@@ -1881,12 +2004,21 @@ const html = `<!DOCTYPE html>
       <div class="panel col">
         <div class="row-between">
           <div>
-            <h2 class="title-md">Матрица разрешений и границ (.agents/permissions.json)</h2>
-            <div class="text-xs muted">Ограничивает выход агента и субагентов за пределы проекта, в интернет, терминал, SSH, БД и деплой.</div>
+            <h2 class="title-md">Визуальная настройка границ и разрешений (.agents/permissions.json)</h2>
+            <div class="text-xs muted">Задайте допустимые границы выхода агента и субагентов: файлы вне проекта, интернет, терминал, SSH, БД и деплой.</div>
+          </div>
+          <span id="permProfileBadge" class="tag mono">—</span>
+        </div>
+        <div class="row-between">
+          <div class="row">
+            <span class="text-xs muted">Быстрый пресет:</span>
+            <button type="button" class="filter-btn" data-perm-preset="safe_default" aria-pressed="false">Безопасный</button>
+            <button type="button" class="filter-btn" data-perm-preset="local_dev" aria-pressed="false">Локальная разработка</button>
+            <button type="button" class="filter-btn" data-perm-preset="staging_full" aria-pressed="false">Staging</button>
           </div>
           <div class="row">
-            <span id="permProfileBadge" class="tag mono">—</span>
-            <button type="button" class="btn copy-trigger" data-copy-key="perm:configure">Промпт настройки</button>
+            <button type="button" id="openPermJsonBtn" class="btn">Открыть JSON</button>
+            <button type="button" id="savePermBtn" class="btn btn-primary">Сохранить в .agents/permissions.json</button>
           </div>
         </div>
         <div id="permissionsGrid" class="grid-3"></div>
