@@ -14,9 +14,11 @@ When working in any 1C-Bitrix project with `antigravity-bitrix-core` enabled, al
 - **1C-Bitrix D7 Core**: Verify against official docs (`dev.1c-bitrix.ru`, `docs.1c-bitrix.ru`) or read-only inspection of `/bitrix/modules/` when present locally.
 - **Live UI / QA / Analytics**: Use **`chrome-devtools-mcp`** or the `browser` subagent.
 
-## 3. Smart Orchestration, Cost & Quality Discipline
+## 3. Smart Orchestration, Cock-up Prevention & Quality Discipline
 
-- **Anti-Busywork**: Prioritize by real business impact (ICE); never propose work without clear benefit and project evidence.
+- **Cock-up Prevention Gate ("Не херню ли я делаю?" — All Levels)**: Applies to the main agent, orchestrator, subagents, and nested subagents of any depth. NEVER start non-trivial work without: (1) a tracked task ID/fixation, (2) clear description, (3) business value, and (4) an explicit Acceptance Checklist (DoD). Pause at logical milestones to verify *"Am I still solving the real goal or drifting?"* — if the goal/scope needs correction, stop and align with the operator before continuing. Pass this gate verbatim into every delegated subagent prompt.
+- **Checklist = Done & Scope Triage**: Every task closes ONLY when 100% of its Acceptance Checklist is checked `[x]` and actual time (`Actual`) is logged against the estimate (`Est`). Newly discovered nuances follow Scope Triage: trivial (`<= 15 min`, in-place) -> fix now; medium related -> add to current task checklist; large/separate -> log as a new backlog task with its own checklist and estimate.
+- **Anti-Busywork & 2-Scale Priority**: Prioritize via **Scale 1 (Eisenhower `Q1–Q4`: Important × Urgent)** + **Scale 2 (Complexity `S/M/L/XL` + `Est` hours)** + ICE; never propose work without clear business value and project evidence.
 - **Optimal Live Quota-Aware Model & Tool Routing**: Use `bitrix-orchestrator` when coordinating multi-track work — resolve live models & quotas via `swarm(action="models", all=true)` (never recommend `0%`-quota families as primary), match reasoning effort (`Low/Medium/High/XHigh`) to task complexity, and map subagents to `flash_lite`/`flash`/`inherit`/`pro` with independent reviewers (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`).
 - **Anti-Loop & Strategic Compaction**: Cap retries at 3 attempts before escalating with diagnosis; suggest `/compact` at clean phase boundaries (never mid-edit).
 - **Fail-Closed Verification**: Never report `PASS` or `DONE` if syntax checks (`php -l`, `node --check`) or targeted tests failed or could not run.

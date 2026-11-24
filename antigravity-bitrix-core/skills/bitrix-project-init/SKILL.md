@@ -103,7 +103,7 @@ Read the reference templates from `~/.gemini/config/plugins/antigravity-bitrix-c
 3. **`docs/memory/codemap.md`** — Site matrix (`SITE_ID`), verified `/local/` classes/modules/templates/components, iblocks & HL-blocks, AJAX endpoints, and external integrations (marking unverified DB IDs explicitly as *«уточнить в БД/админке»* — never guessing!).
 4. **`docs/memory/decisions.md`** — ADR registry (Michael Nygard format) seeded with **`ADR-01`** capturing the foundational architecture & constraints collected in Step 2.
 5. **`docs/memory/status.md`** — Active focus, initial status entry, and explicit **Red Lines** section.
-6. **`docs/backlog.md`** — Prioritized task board (`Ближайший спринт`, `В очереди / Среднесрочные цели`, `Техдолг и идеи`) with numbered task IDs (`#001`, `#002`, ...).
+6. **`docs/backlog.md`** — Prioritized task board with **North Star** goal, **2-Scale Priority** (`Q1–Q4` Eisenhower × `S/M/L/XL` complexity + `Est / Actual` hours), explicit **Business Value**, and per-task **Acceptance Checklist (DoD)** (`#001`, `#002`, ...).
 7. **`docs/daily/DD.MM.YY.md`** — First daily log entry documenting project onboarding and generated architecture map.
 
 ---

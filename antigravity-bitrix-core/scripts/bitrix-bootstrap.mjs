@@ -259,6 +259,7 @@ const replacements = {
   "{{CORE_DECISION_2}}": `Подключён модульный профиль плагинов Antigravity: ${selectedPlugins.join(", ")}.`,
   "{{REJECTED_ALTERNATIVES}}": "Прямое редактирование ядра /bitrix/ и хранение глобальных правил копипастой в проекте.",
   "{{CONSEQUENCES}}": "Требуется завершить интерактивное интервью bitrix-project-init для заполнения ID инфоблоков, доменов и Красных линий.",
+  "{{NORTH_STAR}}": "(уточнить конечную измеримую цель проекта в интервью bitrix-project-init)",
   "{{LONG_TERM_GOAL}}": "(уточнить цель на 3–6 месяцев)",
   "{{CURRENT_SPRINT_GOAL}}": "Завершить онбординг (bitrix-project-init) и согласовать первый спринт.",
   "{{PROJECT_RED_LINE_1}}": "(уточнить критичные бизнес-ограничения: 1С / валюта / SEO-URL / резервы)",

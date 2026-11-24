@@ -2,6 +2,13 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.2.0] - 2026-11-24
+
+### Added (Sprint 1: Governance, Cock-up Prevention & 2-Scale Priorities)
+- **`PLUGIN-007` — Multi-Level Cock-up Prevention Gate**: embedded mandatory `Pre-Flight` / `Mid-Flight` / `Pre-Close` sanity checks and goal-recalibration rules across `antigravity-bitrix-core/rules/AGENTS.md`, `bitrix-orchestrator/SKILL.md`, and **all 6 subagents** across the 4 plugins (with mandatory inheritance into nested subagents of depth 2+).
+- **`PLUGIN-008` — Rich Task Standard (North Star + Business Value + Acceptance Checklist = DoD + Scope Triage + `Est/Actual`)**: upgraded `templates/backlog.md`, `templates/memory-status.md`, `templates/daily-log.md`, `bitrix-memory-governance`, `bitrix-project-init`, `bitrix-bootstrap.mjs`, and `bitrix-dashboard-data.mjs` (`schemaVersion 2.2`).
+- **`PLUGIN-009` — 2-Scale Priority Matrix (`Q1–Q4` Eisenhower × `S/M/L/XL` Complexity & Hours)**: added interactive quadrant & complexity filters, checklist progress bars, North Star card, and `Est / Actual` tracking to `bitrix-dashboard-render.mjs` in native Antigravity IDE styling.
+
 ## [v2.1.0] - 2026-11-20
 
 ### Added

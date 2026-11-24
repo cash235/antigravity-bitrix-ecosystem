@@ -104,11 +104,16 @@ function buildDefaultInitiatives(snap) {
     const effort = sev === "critical" ? 2 : 2.5;
     const tier = sev === "critical" ? "T2" : sev === "high" ? "T3" : "T2";
     const subagent = sig.model || (tier === "T3" ? "inherit" : "flash");
+    const quadrant = sev === "critical" || sev === "high" ? "Q1" : "Q2";
+    const size = effort <= 1.5 ? "S" : effort <= 3 ? "M" : "L";
     list.push({
       id: `SIG-${String(i + 1).padStart(2, "0")}`,
       track: normalizeTrack(sig.track || sig.area),
       pipeline: sev === "critical" ? "fix-defect" : "review-and-audit",
       tier,
+      quadrant,
+      size,
+      estHours: effort,
       title: sig.title || "Сигнал Оркестратора",
       impact,
       confidence,
@@ -123,33 +128,44 @@ function buildDefaultInitiatives(snap) {
       evidence: `Автоскан bitrix-dashboard-data.mjs (${sig.area || "сигнал"})`,
       prompt:
         sig.actionPrompt ||
-        `[Класс: ${tier} | Subagent: ${subagent}]\nЗадача: ${sig.title}\nКонтекст: ${sig.detail}\nПроверка: php -l / node --check + обновление docs/memory/status.md.`,
+        `[Класс: ${tier} | Шкалы: ${quadrant} · ${size} (~${effort} ч) | Subagent: ${subagent}]\nЗадача: ${sig.title}\nБизнес-выгода: ${sig.detail}\nCock-up Prevention: перед стартом и перед закрытием проверь чеклист приёмки и зафиксируй Actual время.`,
     });
   });
 
   const openTasks = Array.isArray(snap.backlog?.openTasks) ? snap.backlog.openTasks : [];
-  openTasks.slice(0, 6).forEach((task, idx) => {
+  openTasks.slice(0, 8).forEach((task, idx) => {
     const idMatch = String(task.text || "").match(/#(\d+)/);
-    const taskId = idMatch ? `BL-${idMatch[1]}` : `BL-${String(idx + 1).padStart(2, "0")}`;
+    const taskId = task.id || (idMatch ? `BL-${idMatch[1]}` : `BL-${String(idx + 1).padStart(2, "0")}`);
     const track = normalizeTrack(`${task.source || ""} ${task.text || ""}`);
+    const quadrant = task.quadrant || "Q2";
+    const size = task.size || "M";
+    const estHours = task.estHours || (size === "S" ? 1 : size === "L" ? 4 : size === "XL" ? 8 : 2.5);
+    const impact = quadrant === "Q1" ? 9.5 : quadrant === "Q2" ? 8.5 : quadrant === "Q3" ? 6 : 4;
+    const effort = size === "S" ? 1.5 : size === "M" ? 2.5 : size === "L" ? 4 : 6;
+    const acLines = Array.isArray(task.checklist) && task.checklist.length > 0
+      ? task.checklist.map((c, ci) => `- [${c.done ? "x" : " "}] AC-${String(ci + 1).padStart(3, "0")}: ${c.text}`).join("\n")
+      : "- [ ] AC-001: Изменения выполнены строго в /local/ по стандартам 1C-Bitrix D7.\n- [ ] AC-002: Пройдены проверки php -l / node --check без регрессий.";
     list.push({
       id: taskId,
       track,
       pipeline: "add-feature",
-      tier: "T3",
+      tier: size === "L" || size === "XL" ? "T4" : "T3",
+      quadrant,
+      size,
+      estHours,
       title: task.text,
-      impact: 8,
-      confidence: 8,
-      effort: 3,
-      uiModel: "Balanced Workhorse (Medium)",
+      impact,
+      confidence: 8.5,
+      effort,
+      uiModel: size === "L" || size === "XL" ? "Flagship (High)" : "Balanced Workhorse (Medium)",
       uiQuota: null,
       fallbackModel: "Cross-Provider Fallback",
       fallbackQuota: null,
-      subagent: "inherit",
+      subagent: size === "L" || size === "XL" ? "pro" : "inherit",
       tools: "bitrix-orchestrator",
-      benefit: "Прямое продвижение по приоритетному бэклогу проекта с проверяемыми критериями приёмки.",
-      evidence: `Открытая задача в ${task.source || "docs/backlog.md"}`,
-      prompt: `[Класс: T3 | Subagent: inherit | Pipeline: add-feature]\nЗадача: Выполнить задачу из ${task.source || "docs/backlog.md"}: ${task.text}\n\nКритерии приёмки (AC):\n- AC-001: Изменения выполнены строго в /local/ по стандартам 1C-Bitrix D7.\n- AC-002: Пройдены проверки php -l / node --check и QA-чеклист без регрессий.\n\nОграничения (Must NOT):\n- НЕ изменять ядро /bitrix/.\n- НЕ добавлять inline <script>/<style> (кроме JSON-LD).\n\nФинал: Обновить docs/daily/, docs/memory/status.md и отметить задачу [x] в бэклоге.`,
+      benefit: task.businessValue || "Прямое продвижение по приоритетному бэклогу проекта с проверяемыми критериями приёмки.",
+      evidence: `${task.sprint ? `${task.sprint} · ` : ""}${task.source || "docs/backlog.md"}${task.checklistTotal ? ` · чеклист ${task.checklistDone}/${task.checklistTotal}` : ""}`,
+      prompt: `[Класс: ${size === "L" || size === "XL" ? "T4" : "T3"} | Шкалы: ${quadrant} · ${size} (~${estHours} ч) | Subagent: ${size === "L" || size === "XL" ? "pro" : "inherit"} | Pipeline: add-feature]\nЗадача (${taskId}): ${task.text}\nБизнес-выгода: ${task.businessValue || "Закрытие приоритетной задачи бэклога."}\n\nЧеклист приёмки (DoD — выполнен чеклист = закрыта задача):\n${acLines}\n\nCock-up Prevention (обязательно для всех уровней субагентов): Проверяй на каждом шаге соответствие цели и чеклисту; попутные нюансы маршрутизируй по Scope Triage.\nФинал: Зафиксировать Actual время, отметить [x] чеклист в бэклоге и обновить docs/memory/status.md.`,
     });
   });
 
@@ -275,10 +291,11 @@ const defaultModels = [
 
 const viewModel = {
   mode,
-  schemaVersion: "2.1",
+  schemaVersion: "2.2",
   generatedAt: (snapshot.generatedAt || new Date().toISOString()).slice(0, 16).replace("T", " "),
   projectName: overlay.projectName || snapshot.projectName || path.basename(rootDir),
   rootDir: snapshot.rootDir || rootDir,
+  northStar: overlay.northStar || snapshot.northStar || snapshot.backlog?.northStar || null,
   readinessScore: snapshot.readinessScore ?? 0,
   adrCount: snapshot.memory?.adrCount ?? 0,
   dailyCount: snapshot.memory?.dailyCount ?? 0,
@@ -288,29 +305,60 @@ const viewModel = {
     openCount: snapshot.backlog?.openCount ?? 0,
     totalCount: snapshot.backlog?.totalCount ?? 0,
     completionPct: snapshot.backlog?.completionPct ?? 0,
+    quadrantCounts: snapshot.backlog?.quadrantCounts || { Q1: 0, Q2: 0, Q3: 0, Q4: 0 },
+    sizeCounts: snapshot.backlog?.sizeCounts || { S: 0, M: 0, L: 0, XL: 0 },
+    totalEstHours: snapshot.backlog?.totalEstHours ?? 0,
+    totalActualHours: snapshot.backlog?.totalActualHours ?? 0,
     openTasks: (overlay.openBacklog || snapshot.backlog?.openTasks || []).map((t, idx) => {
       if (typeof t === "string") {
         return {
           id: `#${idx + 1}`,
           track: "Backend",
           source: "docs/backlog.md",
+          sprint: "",
+          quadrant: "Q2",
+          size: "M",
+          estHours: null,
+          actualHours: null,
+          businessValue: "",
+          checklist: [],
+          checklistDone: 0,
+          checklistTotal: 0,
           text: t,
-          prompt: `Используй bitrix-orchestrator: реализуй задачу «${t}» по стандартам 1C-Bitrix D7.`,
+          prompt: `Используй bitrix-orchestrator (Cock-up Prevention Gate): реализуй задачу «${t}» по стандартам 1C-Bitrix D7 с чеклистом приёмки и фиксацией Actual времени.`,
         };
       }
       const idMatch = String(t.text || "").match(/#(\d+)/);
+      const id = t.id || (idMatch ? `#${idMatch[1]}` : `#${idx + 1}`);
+      const quadrant = t.quadrant || "Q2";
+      const size = t.size || "M";
+      const checklist = Array.isArray(t.checklist) ? t.checklist : [];
+      const acBlock = checklist.length > 0
+        ? "\nЧеклист приёмки:\n" + checklist.map((c) => `- [${c.done ? "x" : " "}] ${c.text}`).join("\n")
+        : "";
       return {
-        id: t.id || (idMatch ? `#${idMatch[1]}` : `#${idx + 1}`),
+        id,
         track: t.track || normalizeTrack(`${t.source || ""} ${t.text || ""}`),
         source: t.source || "docs/backlog.md",
+        sprint: t.sprint || "",
+        quadrant,
+        size,
+        estHours: t.estHours ?? null,
+        actualHours: t.actualHours ?? null,
+        businessValue: t.businessValue || "",
+        checklist,
+        checklistDone: t.checklistDone ?? checklist.filter((c) => c.done).length,
+        checklistTotal: t.checklistTotal ?? checklist.length,
         text: t.text || "",
         prompt:
           t.prompt ||
-          `Используй bitrix-orchestrator: выполни задачу ${t.id || ""} (${t.text || ""}) с AC-001..N, проверкой php -l/node --check и обновлением docs/memory/.`.trim(),
+          `[Шкалы: ${quadrant} · ${size}${t.estHours != null ? ` · Est ${t.estHours}ч` : ""}]\nИспользуй bitrix-orchestrator (Cock-up Prevention Gate): выполни задачу ${id} — ${t.text || ""}.\nБизнес-ценность: ${t.businessValue || "уточнить"}.${acBlock}\nФинал: выполнить 100% чеклиста, зафиксировать Actual время и обновить docs/memory/status.md.`,
       };
     }),
     doneTasks: (overlay.doneBacklog || snapshot.backlog?.recentDoneTasks || []).map((t) =>
-      typeof t === "string" ? t : t.text || ""
+      typeof t === "string"
+        ? t
+        : `${t.id ? `${t.id} — ` : ""}${t.text || ""}${t.actualHours != null ? ` (Факт: ${t.actualHours}ч)` : ""}`
     ),
   },
   contextBudget: snapshot.contextBudget || {
@@ -747,7 +795,32 @@ const clientScript = `
     sort: "ice",
     knowledgeQuery: "",
     backlogQuery: "",
+    backlogQuadrant: "all",
+    backlogSize: "all",
+    backlogSort: "quadrant",
   };
+
+  function quadrantRank(q) {
+    return q === "Q1" ? 1 : q === "Q2" ? 2 : q === "Q3" ? 3 : 4;
+  }
+
+  function sizeRank(s) {
+    return s === "S" ? 1 : s === "M" ? 2 : s === "L" ? 3 : 4;
+  }
+
+  function quadrantBadge(q) {
+    const code = String(q || "Q2").toUpperCase();
+    const dot = code === "Q1" ? "dot-err" : code === "Q2" ? "dot-warn" : code === "Q3" ? "dot-ok" : "dot-muted";
+    const title = code === "Q1" ? "Важно + Срочно" : code === "Q2" ? "Важно + Не срочно" : code === "Q3" ? "Не важно + Срочно" : "Icebox";
+    return '<span class="tag tag-strong mono" title="' + esc(title) + '"><span class="dot ' + dot + '"></span>' + esc(code) + "</span>";
+  }
+
+  function sizeTimeBadge(size, est, actual) {
+    const parts = [esc(size || "M")];
+    if (est != null) parts.push("Est " + esc(est) + "ч");
+    if (actual != null) parts.push("Факт " + esc(actual) + "ч");
+    return '<span class="tag mono">' + parts.join(" · ") + "</span>";
+  }
 
   const promptRegistry = new Map();
 
@@ -862,6 +935,11 @@ const clientScript = `
         return i.track === state.track;
       });
     }
+    if (state.sort === "quadrant") {
+      list.sort(function (a, b) {
+        return quadrantRank(a.quadrant || "Q2") - quadrantRank(b.quadrant || "Q2") || b.ice - a.ice;
+      });
+    }
     if (state.sort === "ice") list.sort(function (a, b) { return b.ice - a.ice; });
     if (state.sort === "effort") list.sort(function (a, b) { return a.effort - b.effort || b.ice - a.ice; });
     if (state.sort === "impact") list.sort(function (a, b) { return b.impact - a.impact || b.ice - a.ice; });
@@ -879,6 +957,8 @@ const clientScript = `
           '<article class="subcard col" style="gap:8px;padding:11px 12px;">' +
           '<div class="row-between">' +
           '<div class="row">' +
+          quadrantBadge(item.quadrant || (item.ice >= 30 ? "Q1" : "Q2")) +
+          sizeTimeBadge(item.size || (item.effort <= 1.5 ? "S" : item.effort <= 3 ? "M" : "L"), item.estHours || item.effort, null) +
           trackBadge(item.track) +
           '<span class="tag mono">' + esc(item.tier) + " · " + esc(item.pipeline) + "</span>" +
           modelBadge(item) +
@@ -959,17 +1039,102 @@ const clientScript = `
       .join("");
   }
 
+  function renderBacklogFilters() {
+    const qBox = document.getElementById("backlogQuadrantFilters");
+    if (qBox) {
+      const qc = DATA.backlog.quadrantCounts || {};
+      const qDefs = [
+        { k: "all", label: "Все", count: DATA.backlog.openTasks.length },
+        { k: "Q1", label: "Q1 Важно+Срочно", count: qc.Q1 || 0, dot: "dot-err" },
+        { k: "Q2", label: "Q2 Важно", count: qc.Q2 || 0, dot: "dot-warn" },
+        { k: "Q3", label: "Q3 Срочно", count: qc.Q3 || 0, dot: "dot-ok" },
+        { k: "Q4", label: "Q4 Icebox", count: qc.Q4 || 0, dot: "dot-muted" },
+      ];
+      qBox.innerHTML = qDefs
+        .map(function (d) {
+          return (
+            '<button type="button" class="filter-btn" aria-pressed="' +
+            (state.backlogQuadrant === d.k ? "true" : "false") +
+            '" data-bl-quadrant="' + esc(d.k) + '">' +
+            (d.dot ? '<span class="dot ' + d.dot + '"></span>' : "") +
+            esc(d.label) + ' <span class="mono muted">' + d.count + "</span></button>"
+          );
+        })
+        .join("");
+    }
+
+    const sBox = document.getElementById("backlogSizeFilters");
+    if (sBox) {
+      const sc = DATA.backlog.sizeCounts || {};
+      const sDefs = [
+        { k: "all", label: "Любая сложность" },
+        { k: "S", label: "S (" + (sc.S || 0) + ")" },
+        { k: "M", label: "M (" + (sc.M || 0) + ")" },
+        { k: "L", label: "L (" + (sc.L || 0) + ")" },
+        { k: "XL", label: "XL (" + (sc.XL || 0) + ")" },
+      ];
+      sBox.innerHTML = sDefs
+        .map(function (d) {
+          return (
+            '<button type="button" class="filter-btn mono" aria-pressed="' +
+            (state.backlogSize === d.k ? "true" : "false") +
+            '" data-bl-size="' + esc(d.k) + '">' + esc(d.label) + "</button>"
+          );
+        })
+        .join("");
+    }
+  }
+
   function renderBacklog() {
+    const nsBox = document.getElementById("northStarBox");
+    if (nsBox) {
+      if (DATA.northStar) {
+        nsBox.classList.remove("hidden");
+        document.getElementById("northStarText").textContent = DATA.northStar;
+      } else {
+        nsBox.classList.add("hidden");
+      }
+    }
+
     const q = state.backlogQuery.trim().toLowerCase();
     const pct = DATA.backlog.completionPct || 0;
+    const estMeta = DATA.backlog.totalEstHours
+      ? " · Est " + DATA.backlog.totalEstHours + "ч / Факт " + (DATA.backlog.totalActualHours || 0) + "ч"
+      : "";
     document.getElementById("backlogProgressLabel").textContent =
-      DATA.backlog.doneCount + " / " + DATA.backlog.totalCount + " (" + pct + "%)";
+      DATA.backlog.doneCount + " / " + DATA.backlog.totalCount + " (" + pct + "%)" + estMeta;
     const bar = document.getElementById("backlogProgressBar");
     if (bar) bar.style.width = pct + "%";
 
-    const openFiltered = DATA.backlog.openTasks.filter(function (t) {
-      return !q || String(t.text).toLowerCase().includes(q) || String(t.id).toLowerCase().includes(q);
+    renderBacklogFilters();
+
+    let openFiltered = DATA.backlog.openTasks.filter(function (t) {
+      if (state.backlogQuadrant !== "all" && t.quadrant !== state.backlogQuadrant) return false;
+      if (state.backlogSize !== "all" && t.size !== state.backlogSize) return false;
+      return (
+        !q ||
+        String(t.text).toLowerCase().includes(q) ||
+        String(t.id).toLowerCase().includes(q) ||
+        String(t.businessValue || "").toLowerCase().includes(q)
+      );
     });
+
+    if (state.backlogSort === "quadrant") {
+      openFiltered.sort(function (a, b) {
+        return quadrantRank(a.quadrant) - quadrantRank(b.quadrant) || sizeRank(a.size) - sizeRank(b.size);
+      });
+    } else if (state.backlogSort === "size") {
+      openFiltered.sort(function (a, b) {
+        return sizeRank(a.size) - sizeRank(b.size) || quadrantRank(a.quadrant) - quadrantRank(b.quadrant);
+      });
+    } else if (state.backlogSort === "progress") {
+      openFiltered.sort(function (a, b) {
+        const pa = a.checklistTotal ? a.checklistDone / a.checklistTotal : 0;
+        const pb = b.checklistTotal ? b.checklistDone / b.checklistTotal : 0;
+        return pb - pa;
+      });
+    }
+
     const openEl = document.getElementById("openBacklogList");
     if (openFiltered.length === 0) {
       openEl.innerHTML = '<div class="subcard text-xs muted">Открытых задач по фильтру не найдено.</div>';
@@ -978,17 +1143,48 @@ const clientScript = `
         .map(function (t, idx) {
           const key = "bl:" + idx + ":" + t.id;
           promptRegistry.set(key, { text: t.prompt, label: "Промпт для " + t.id + " скопирован" });
+          const cbTotal = t.checklistTotal || 0;
+          const cbDone = t.checklistDone || 0;
+          const cbPct = cbTotal > 0 ? Math.round((cbDone / cbTotal) * 100) : 0;
+          const checklistHtml =
+            Array.isArray(t.checklist) && t.checklist.length > 0
+              ? "<details>" +
+                "<summary>" +
+                "<span>Чеклист приёмки (DoD): " + cbDone + "/" + cbTotal + " (" + cbPct + "%)</span>" +
+                '<span class="text-link lbl-open">Показать</span>' +
+                '<span class="text-link lbl-close">Скрыть</span>' +
+                "</summary>" +
+                '<div class="details-body">' +
+                t.checklist
+                  .map(function (c) {
+                    return (
+                      '<div class="row text-xs ' + (c.done ? "muted" : "") + '">' +
+                      '<span class="dot ' + (c.done ? "dot-ok" : "dot-muted") + '"></span>' +
+                      "<span>" + esc(c.text) + "</span>" +
+                      "</div>"
+                    );
+                  })
+                  .join("") +
+                "</div>" +
+                "</details>"
+              : "";
           return (
-            '<div class="subcard row-between">' +
-            '<div class="col" style="gap:4px;flex:1;min-width:220px;">' +
+            '<div class="subcard col" style="gap:7px;">' +
+            '<div class="row-between">' +
             '<div class="row">' +
             '<span class="mono text-link" style="font-weight:600;">' + esc(t.id) + "</span>" +
-            trackBadge(t.track) +
-            '<span class="mono muted text-xs">' + esc(t.source) + "</span>" +
-            "</div>" +
-            '<div class="text-xs" style="font-weight:500;">' + esc(t.text) + "</div>" +
+            quadrantBadge(t.quadrant) +
+            sizeTimeBadge(t.size, t.estHours, t.actualHours) +
+            (t.sprint ? '<span class="tag">' + esc(t.sprint) + "</span>" : "") +
             "</div>" +
             '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(key) + '">Копировать промпт</button>' +
+            "</div>" +
+            '<div style="font-size:12.5px;font-weight:600;">' + esc(t.text) + "</div>" +
+            (t.businessValue ? '<div class="text-xs muted"><strong>Ценность:</strong> ' + esc(t.businessValue) + "</div>" : "") +
+            (cbTotal > 0
+              ? '<div class="progress-track"><div class="progress-fill" style="width:' + cbPct + '%;background:var(--primary);"></div></div>'
+              : "") +
+            checklistHtml +
             "</div>"
           );
         })
@@ -1206,6 +1402,20 @@ const clientScript = `
       return;
     }
 
+    const blQ = ev.target.closest("[data-bl-quadrant]");
+    if (blQ && blQ.dataset.blQuadrant) {
+      state.backlogQuadrant = blQ.dataset.blQuadrant;
+      renderBacklog();
+      return;
+    }
+
+    const blS = ev.target.closest("[data-bl-size]");
+    if (blS && blS.dataset.blSize) {
+      state.backlogSize = blS.dataset.blSize;
+      renderBacklog();
+      return;
+    }
+
     const copyBtn = ev.target.closest(".copy-trigger");
     if (copyBtn && copyBtn.dataset.copyKey) {
       const entry = promptRegistry.get(copyBtn.dataset.copyKey);
@@ -1245,6 +1455,14 @@ const clientScript = `
   if (bSearch) {
     bSearch.addEventListener("input", function (e) {
       state.backlogQuery = e.target.value;
+      renderBacklog();
+    });
+  }
+
+  const bSort = document.getElementById("backlogSortSelect");
+  if (bSort) {
+    bSort.addEventListener("change", function (e) {
+      state.backlogSort = e.target.value;
       renderBacklog();
     });
   }
@@ -1375,6 +1593,7 @@ const html = `<!DOCTYPE html>
             <span class="muted">Сортировка:</span>
             <select id="sortSelect" class="select">
               <option value="ice">ICE (убыв.)</option>
+              <option value="quadrant">Матрица Q1 → Q4</option>
               <option value="effort">Быстрые победы (Effort ↑)</option>
               <option value="impact">Макс. польза (Impact ↓)</option>
             </select>
@@ -1413,18 +1632,35 @@ const html = `<!DOCTYPE html>
 
     <!-- TAB 3: BACKLOG -->
     <section id="tab-backlog" class="tab-panel hidden col">
+      <div id="northStarBox" class="panel col hidden" style="gap:4px;">
+        <div class="title-md">Конечная цель проекта (North Star)</div>
+        <div id="northStarText" class="text-xs"></div>
+      </div>
+
       <div class="panel col">
         <div class="row-between">
           <div>
-            <h2 class="title-md">Бэклог проекта</h2>
-            <div class="text-xs muted">Копируйте готовый контракт задачи для запуска через Оркестратора.</div>
+            <h2 class="title-md">Бэклог · 2-шкальная матрица (Q1–Q4 × S/M/L)</h2>
+            <div class="text-xs muted">Выполнен чеклист приёмки + зафиксирован факт времени = закрыта задача.</div>
           </div>
-          <input id="backlogSearch" type="search" class="input" placeholder="Фильтр по задачам..." />
+          <div class="row">
+            <select id="backlogSortSelect" class="select">
+              <option value="quadrant">Матрица Q1 → Q4</option>
+              <option value="size">Сложность S → XL</option>
+              <option value="progress">Прогресс чеклиста</option>
+            </select>
+            <input id="backlogSearch" type="search" class="input" placeholder="Фильтр по задачам..." />
+          </div>
+        </div>
+
+        <div class="col" style="gap:6px;">
+          <div class="row" id="backlogQuadrantFilters"></div>
+          <div class="row" id="backlogSizeFilters"></div>
         </div>
 
         <div class="col" style="gap:4px;">
           <div class="row-between text-xs">
-            <span class="muted">Общий прогресс</span>
+            <span class="muted">Общий прогресс и время</span>
             <strong class="mono" id="backlogProgressLabel">0 / 0 (0%)</strong>
           </div>
           <div class="progress-track">

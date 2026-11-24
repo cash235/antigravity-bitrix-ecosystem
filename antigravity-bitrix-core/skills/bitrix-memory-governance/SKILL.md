@@ -36,13 +36,14 @@ Every decision in `docs/memory/decisions.md` MUST include:
 ---
 
 ## 3. Maintenance Protocol (Mandatory Task Closure Checklist)
-Never declare a non-trivial task complete until:
-1. `docs/daily/DD.MM.YY.md` records what changed and why.
-2. Affected directory `README.md` is created or updated.
-3. `docs/memory/status.md` includes the completed task in Recent Changes.
-4. `docs/memory/codemap.md` and `docs/memory/decisions.md` are synced (if structure or architecture changed).
-5. `docs/backlog.md` marks completed items `[x]` and logs any deferred follow-ups with new IDs.
-6. Manual UAT steps are provided to the operator.
+**Rule: Checklist 100% `[x]` + `Actual` time logged = Task Done.** Never declare a non-trivial task complete until:
+1. Every item in the task's **Acceptance Checklist (DoD)** in `docs/backlog.md` is verified and checked `[x]` (newly found nuances routed via Scope Triage: inline `<= 15m` / added to current checklist / new backlog task with its own checklist and `Est`).
+2. **Actual time (`Actual`)** is recorded next to `Est` in `docs/backlog.md` and `docs/daily/DD.MM.YY.md`.
+3. `docs/daily/DD.MM.YY.md` records what changed, why, and session duration.
+4. Affected directory `README.md` is created or updated.
+5. `docs/memory/status.md` includes the completed task (`Est / Actual`) in Recent Changes.
+6. `docs/memory/codemap.md` and `docs/memory/decisions.md` are synced (if structure or architecture changed).
+7. Manual UAT steps are provided to the operator.
 
 ---
 

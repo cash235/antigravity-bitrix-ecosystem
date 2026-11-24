@@ -448,25 +448,162 @@ const knowledgeMatrix = [
   ),
 ];
 
-// 5. Backlog Parsing
-function parseCheckboxes(mdText, sourceName) {
+// 5. Backlog Parsing (Rich 2-Scale Cards + North Star + Checklists + Est/Actual + Legacy Checkbox fallback)
+function parseHours(raw) {
+  if (!raw) return null;
+  const m = String(raw).replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : null;
+}
+
+function parseRichBacklog(mdText, sourceName) {
   const done = [];
   const open = [];
-  for (const line of mdText.split(/\r?\n/)) {
+  let northStar = null;
+
+  const nsMatch = mdText.match(/\*\*Конечная цель[^*]*\*\*:\s*(.+)/i);
+  if (nsMatch) northStar = nsMatch[1].trim();
+
+  const lines = mdText.split(/\r?\n/);
+  const cards = [];
+  let currentSprint = "";
+  let currentCard = null;
+
+  for (const line of lines) {
+    const h2 = line.match(/^##\s+(.+)$/);
+    if (h2) {
+      if (currentCard) {
+        cards.push(currentCard);
+        currentCard = null;
+      }
+      currentSprint = h2[1].replace(/[#*`]/g, "").trim();
+      continue;
+    }
+
+    const h3 = line.match(/^###\s+`?([A-Za-z0-9_#-]+)`?\s*[—–-]\s*(.+)$/);
+    if (h3) {
+      if (currentCard) cards.push(currentCard);
+      const qFromSection = currentSprint.match(/\b(Q[1-4])\b/i);
+      currentCard = {
+        id: h3[1].trim(),
+        title: h3[2].replace(/\*\*/g, "").trim(),
+        source: sourceName,
+        sprint: currentSprint,
+        quadrant: qFromSection ? qFromSection[1].toUpperCase() : "Q2",
+        size: "M",
+        estHours: null,
+        actualHours: null,
+        businessValue: "",
+        checklist: [],
+      };
+      continue;
+    }
+
+    if (!currentCard) continue;
+
+    const qMatch = line.match(/\[(Q[1-4])(?::[^\]]+)?\]/i);
+    if (qMatch) currentCard.quadrant = qMatch[1].toUpperCase();
+
+    const sMatch = line.match(/\[(XL|S|M|L)(?::[^\]]+)?\]/i);
+    if (sMatch) currentCard.size = sMatch[1].toUpperCase();
+
+    const estMatch = line.match(/Оценка\s*(?:\(`?Est`?\))?\*\*:\s*`?([^`·\n]+)`?/i);
+    if (estMatch) currentCard.estHours = parseHours(estMatch[1]);
+
+    const actMatch = line.match(/Факт\s*(?:\(`?Actual`?\))?\*\*:\s*`?([^`·\n]+)`?/i);
+    if (actMatch) currentCard.actualHours = parseHours(actMatch[1]);
+
+    const valMatch = line.match(/^\s*-\s+\*\*(?:Бизнес-ценность|Ценность)\*\*:\s*(.+)$/i);
+    if (valMatch) currentCard.businessValue = valMatch[1].trim();
+
+    const cb = line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.+)$/);
+    if (cb) {
+      currentCard.checklist.push({
+        done: cb[1].toLowerCase() === "x",
+        text: cb[2].replace(/\*\*/g, "").trim(),
+      });
+    }
+  }
+  if (currentCard) cards.push(currentCard);
+
+  if (cards.length > 0) {
+    for (const c of cards) {
+      const checklistDone = c.checklist.filter((x) => x.done).length;
+      const checklistTotal = c.checklist.length;
+      const isDone = checklistTotal > 0 && checklistDone === checklistTotal;
+      const item = {
+        id: c.id,
+        source: c.source,
+        sprint: c.sprint,
+        text: c.title,
+        quadrant: c.quadrant,
+        size: c.size,
+        estHours: c.estHours,
+        actualHours: c.actualHours,
+        businessValue: c.businessValue,
+        checklist: c.checklist,
+        checklistDone,
+        checklistTotal,
+      };
+      if (isDone) done.push(item);
+      else open.push(item);
+    }
+    return { northStar, done, open };
+  }
+
+  // Fallback for flat checkbox lists
+  for (const line of lines) {
     const m = line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.+)$/);
     if (!m) continue;
     const isDone = m[1].toLowerCase() === "x";
     const text = m[2].replace(/\*\*/g, "").trim();
-    if (isDone) done.push({ source: sourceName, text });
-    else open.push({ source: sourceName, text });
+    const item = {
+      source: sourceName,
+      text,
+      quadrant: "Q2",
+      size: "M",
+      estHours: null,
+      actualHours: null,
+      businessValue: "",
+      checklist: [],
+      checklistDone: isDone ? 1 : 0,
+      checklistTotal: 1,
+    };
+    if (isDone) done.push(item);
+    else open.push(item);
   }
-  return { done, open };
+  return { northStar, done, open };
 }
 
-const bMain = parseCheckboxes(backlogText, "docs/backlog.md");
-const bSeo = parseCheckboxes(seoPlanText, "docs/seo/MASTER_SEO_PLAN.md");
+const ecoBacklogText = !backlogText ? readSafe(path.join(rootDir, "BACKLOG_ECOSYSTEM.md"), 80000) : "";
+const bMain = parseRichBacklog(
+  backlogText || ecoBacklogText,
+  backlogText ? "docs/backlog.md" : ecoBacklogText ? "BACKLOG_ECOSYSTEM.md" : "docs/backlog.md"
+);
+const bSeo = parseRichBacklog(seoPlanText, "docs/seo/MASTER_SEO_PLAN.md");
 const allDoneTasks = [...bMain.done, ...bSeo.done];
 const allOpenTasks = [...bMain.open, ...bSeo.open];
+
+const northStar =
+  bMain.northStar ||
+  (statusText.match(/\*\*Конечная цель[^*]*\*\*:\s*(.+)/i) || [])[1]?.trim() ||
+  null;
+
+const quadrantCounts = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+const sizeCounts = { S: 0, M: 0, L: 0, XL: 0 };
+let totalEstHours = 0;
+let totalActualHours = 0;
+
+for (const t of allOpenTasks) {
+  if (quadrantCounts[t.quadrant] !== undefined) quadrantCounts[t.quadrant]++;
+  if (sizeCounts[t.size] !== undefined) sizeCounts[t.size]++;
+  if (typeof t.estHours === "number") totalEstHours += t.estHours;
+  if (typeof t.actualHours === "number") totalActualHours += t.actualHours;
+}
+for (const t of allDoneTasks) {
+  if (typeof t.actualHours === "number") totalActualHours += t.actualHours;
+}
+totalEstHours = Number(totalEstHours.toFixed(1));
+totalActualHours = Number(totalActualHours.toFixed(1));
 
 // 5.5. Optional QA Preflight Auto-Integration (when antigravity-bitrix-qa is installed)
 let qaPreflight = null;
@@ -642,10 +779,11 @@ if (ecosystem.core) score += 10;
 if (latestDaily && latestDaily.ageDays <= 7) score += 5;
 
 const payload = {
-  schemaVersion: "2.1",
+  schemaVersion: "2.2",
   generatedAt: new Date().toISOString(),
   projectName: path.basename(rootDir),
   rootDir,
+  northStar,
   readinessScore: Math.min(100, score),
   qaPreflight,
   structure: {
@@ -670,6 +808,7 @@ const payload = {
   },
   knowledgeMatrix,
   backlog: {
+    northStar,
     doneCount: allDoneTasks.length,
     openCount: allOpenTasks.length,
     totalCount: allDoneTasks.length + allOpenTasks.length,
@@ -677,8 +816,12 @@ const payload = {
       allDoneTasks.length + allOpenTasks.length > 0
         ? Math.round((allDoneTasks.length / (allDoneTasks.length + allOpenTasks.length)) * 100)
         : 0,
-    openTasks: allOpenTasks.slice(0, 20),
-    recentDoneTasks: allDoneTasks.slice(0, 10),
+    quadrantCounts,
+    sizeCounts,
+    totalEstHours,
+    totalActualHours,
+    openTasks: allOpenTasks.slice(0, 30),
+    recentDoneTasks: allDoneTasks.slice(0, 15),
   },
   git: gitInfo,
   ecosystem: {
