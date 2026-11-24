@@ -144,7 +144,12 @@ if (!fs.existsSync(rootDir)) {
 }
 
 const SKIP_DIRS = new Set([".git", "node_modules", "bitrix", "upload", "vendor", "cache", "managed_cache"]);
+const BACKUP_NAME_RE = /(?:\((?:copy|копия|old|backup|до\s+[^)]+)\)|[_-](?:backup|old|copy|bak)(?:\.|$)|\.bak$|\.orig$)/i;
+const VENDOR_CSS_RE = /(?:\.min\.css$|^(?:jquery|bootstrap|swiper|slick|fancybox|owl|select2|fontawesome|font-awesome|normalize|animate|aos|nouislider|magnific|lightbox|ion\.range|air-datepicker)[\W_])/i;
+
 const scanFiles = [];
+const backupAssets = [];
+const skippedVendor = [];
 
 function walk(dir, depth = 0) {
   if (depth > 8) return;
@@ -157,9 +162,18 @@ function walk(dir, depth = 0) {
   for (const e of entries) {
     if (SKIP_DIRS.has(e.name)) continue;
     const full = path.join(dir, e.name);
+    const rel = path.relative(rootDir, full).replace(/\\/g, "/");
+    if (BACKUP_NAME_RE.test(e.name)) {
+      backupAssets.push(rel);
+      continue;
+    }
     if (e.isDirectory()) {
       walk(full, depth + 1);
     } else if (/\.(php|css|scss|html)$/i.test(e.name)) {
+      if ((e.name.toLowerCase().endsWith(".css") || e.name.toLowerCase().endsWith(".scss")) && VENDOR_CSS_RE.test(e.name)) {
+        skippedVendor.push(rel);
+        continue;
+      }
       scanFiles.push(full);
     }
   }
@@ -239,7 +253,7 @@ for (const file of scanFiles) {
     });
   }
 
-  // 4. CSS / Motion performance checks
+  // 4. CSS / Motion performance checks (skip vendor prefixes -webkit-/-moz-/-o- to avoid 4x duplicates)
   if (ext === ".css" || ext === ".scss") {
     if (/\b(?:transition|animation)\s*:/i.test(content) || /@keyframes\b/i.test(content)) {
       hasCssMotion = true;
@@ -247,15 +261,38 @@ for (const file of scanFiles) {
     if (/prefers-reduced-motion/i.test(content)) {
       hasReducedMotion = true;
     }
+    let fileTransAll = 0;
+    let fileLayoutThrash = 0;
     lines.forEach((ln, idx) => {
-      if (/\btransition\s*:\s*all\b/i.test(ln)) {
-        critical.push({ code: "MOTION_TRANSITION_ALL", file: rel, line: idx + 1, message: "Avoid 'transition: all' — animate only GPU-safe transform/opacity." });
+      if (/(?<![a-z-])transition\s*:\s*all\b/i.test(ln)) {
+        fileTransAll++;
+        if (fileTransAll <= 5) {
+          critical.push({ code: "MOTION_TRANSITION_ALL", file: rel, line: idx + 1, message: "Avoid 'transition: all' — animate only GPU-safe transform/opacity." });
+        }
       }
-      if (/\btransition(?:-property)?\s*:[^;]*\b(?:width|height|top|left|margin|padding)\b/i.test(ln)) {
-        warnings.push({ code: "MOTION_LAYOUT_THRASH", file: rel, line: idx + 1, message: "Animating layout property (width/height/top/left/margin/padding) hurts mobile INP." });
+      if (/(?<![a-z-])transition(?:-property)?\s*:[^;]*\b(?:width|height|top|left|margin|padding)\b/i.test(ln)) {
+        fileLayoutThrash++;
+        if (fileLayoutThrash <= 5) {
+          warnings.push({ code: "MOTION_LAYOUT_THRASH", file: rel, line: idx + 1, message: "Animating layout property (width/height/top/left/margin/padding) hurts mobile INP." });
+        }
       }
     });
+    if (fileTransAll > 5) {
+      critical.push({ code: "MOTION_TRANSITION_ALL_MORE", file: rel, line: 1, message: `+${fileTransAll - 5} additional 'transition: all' occurrences in this file.` });
+    }
+    if (fileLayoutThrash > 5) {
+      warnings.push({ code: "MOTION_LAYOUT_THRASH_MORE", file: rel, line: 1, message: `+${fileLayoutThrash - 5} additional layout-property transitions in this file.` });
+    }
   }
+}
+
+if (backupAssets.length > 0) {
+  warnings.push({
+    code: "BACKUP_TEMPLATE_FILES",
+    file: path.relative(rootDir, scanRoot).replace(/\\/g, "/") || ".",
+    line: 1,
+    message: `Found ${backupAssets.length} backup/copy files or folders inside templates (${backupAssets.slice(0, 4).join(", ")}${backupAssets.length > 4 ? " ..." : ""}) — archive or delete them so Git stays clean.`,
+  });
 }
 
 if (hasCssMotion && !hasReducedMotion) {
@@ -272,6 +309,8 @@ const report = {
   gate,
   scanRoot: path.relative(rootDir, scanRoot).replace(/\\/g, "/") || ".",
   filesChecked: scanFiles.length,
+  skippedVendorCount: skippedVendor.length,
+  backupAssetsCount: backupAssets.length,
   criticalCount: critical.length,
   warningCount: warnings.length,
   critical: critical.slice(0, 30),
@@ -281,14 +320,14 @@ const report = {
 if (jsonMode) {
   console.log(JSON.stringify(report, null, 2));
 } else {
-  console.log(`=== 1C-Bitrix Design & Visual Gate (${report.filesChecked} files checked) ===`);
+  console.log(`=== 1C-Bitrix Design & Visual Gate (${report.filesChecked} active files checked, ${report.skippedVendorCount} vendor skipped, ${report.backupAssetsCount} backups flagged) ===`);
   for (const c of report.critical) {
     console.log(`[FAIL] ${c.code} ${c.file}:${c.line} — ${c.message}`);
   }
   for (const w of report.warnings) {
     console.log(`[WARN] ${w.code} ${w.file}:${w.line} — ${w.message}`);
   }
-  console.log(`GATE: ${gate}`);
+  console.log(`GATE: ${gate} (critical: ${report.criticalCount}, warnings: ${report.warningCount})`);
 }
 
 process.exit(gate === "FAIL" ? 2 : 0);
