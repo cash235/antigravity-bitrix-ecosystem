@@ -25,7 +25,7 @@ if [ "$NEEDS_UPDATE" = "0" ] && command -v node >/dev/null 2>&1; then
 const fs = require("fs");
 const path = require("path");
 const [srcRoot, dstRoot] = process.argv.slice(1);
-const list = ["antigravity-bitrix-core", "antigravity-bitrix-seo-geo", "antigravity-bitrix-qa", "antigravity-bitrix-marketing"];
+const list = ["antigravity-bitrix-core", "antigravity-bitrix-seo-geo", "antigravity-bitrix-qa", "antigravity-bitrix-marketing", "antigravity-bitrix-design"];
 for (const p of list) {
   const sf = path.join(srcRoot, p, "plugin.json");
   const df = path.join(dstRoot, p, "plugin.json");

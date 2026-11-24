@@ -90,6 +90,9 @@ const PLUGIN_ALIASES = {
   marketing: "antigravity-bitrix-marketing",
   cro: "antigravity-bitrix-marketing",
   "antigravity-bitrix-marketing": "antigravity-bitrix-marketing",
+  design: "antigravity-bitrix-design",
+  ui: "antigravity-bitrix-design",
+  "antigravity-bitrix-design": "antigravity-bitrix-design",
 };
 
 /** @type {Record<string, string[]>} */
@@ -99,17 +102,20 @@ const PROFILES = {
     "antigravity-bitrix-seo-geo",
     "antigravity-bitrix-qa",
     "antigravity-bitrix-marketing",
+    "antigravity-bitrix-design",
   ],
   store: [
     "antigravity-bitrix-core",
     "antigravity-bitrix-seo-geo",
     "antigravity-bitrix-qa",
     "antigravity-bitrix-marketing",
+    "antigravity-bitrix-design",
   ],
   corporate: [
     "antigravity-bitrix-core",
     "antigravity-bitrix-seo-geo",
     "antigravity-bitrix-qa",
+    "antigravity-bitrix-design",
   ],
   minimal: ["antigravity-bitrix-core"],
 };

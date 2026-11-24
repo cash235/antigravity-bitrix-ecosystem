@@ -45,7 +45,8 @@ jobs:
             "antigravity-bitrix-core",
             "antigravity-bitrix-seo-geo",
             "antigravity-bitrix-qa",
-            "antigravity-bitrix-marketing"
+            "antigravity-bitrix-marketing",
+            "antigravity-bitrix-design"
           ];
 
           const seenSkills = new Map();
@@ -120,7 +121,7 @@ jobs:
             echo "ERROR: Internal HANDOFF_*.md files must not be committed!"
             exit 1
           fi
-          if grep -rnE -- "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----" --exclude-dir=.git --exclude="bitrix-qa-preflight.mjs" --exclude="ci.yml" .; then
+          if grep -rnE -- "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----" --exclude-dir=.git --exclude="bitrix-qa-preflight.mjs" --exclude="bitrix-skill-collector.mjs" --exclude="ci.yml" .; then
             echo "ERROR: Private key material detected!"
             exit 1
           fi

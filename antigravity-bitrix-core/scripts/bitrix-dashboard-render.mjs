@@ -255,6 +255,7 @@ function buildEcosystemCards(snap) {
     { dir: "antigravity-bitrix-seo-geo", fallbackTitle: "1C-Bitrix SEO & GEO" },
     { dir: "antigravity-bitrix-qa", fallbackTitle: "1C-Bitrix QA & Production Readiness" },
     { dir: "antigravity-bitrix-marketing", fallbackTitle: "1C-Bitrix Marketing & CRO" },
+    { dir: "antigravity-bitrix-design", fallbackTitle: "1C-Bitrix Design Taste & Motion" },
   ];
   return defs.map((d) => {
     const found = installed.find((p) => p.dir === d.dir);
@@ -2405,8 +2406,8 @@ const html = `<!DOCTYPE html>
       <div class="row-between" style="align-items:flex-start;">
         <div class="col" style="gap:4px;flex:1;min-width:260px;">
           <div class="row">
-            <span class="tag tag-strong">Central Orchestrator v2.1</span>
-            <span class="tag">4-Plugin Ecosystem</span>
+            <span class="tag tag-strong">Central Orchestrator v2.5</span>
+            <span class="tag">5-Plugin Ecosystem</span>
             <span class="text-xs muted mono" id="scanTimeEl">Скан: —</span>
           </div>
           <h1 class="title-lg">Командный центр 1С-Битрикс · <span class="text-link" id="projectNameEl">—</span></h1>
@@ -2683,8 +2684,8 @@ const html = `<!DOCTYPE html>
       <div class="panel col">
         <div class="row-between">
           <div>
-            <h2 class="title-md">Экосистема 1С-Битрикс (4 плагина)</h2>
-            <div class="text-xs muted">core · seo-geo · qa · marketing — независимые модули без npm-зависимостей.</div>
+            <h2 class="title-md">Экосистема 1С-Битрикс (5 плагинов)</h2>
+            <div class="text-xs muted">core · seo-geo · qa · marketing · design — независимые модули без npm-зависимостей.</div>
           </div>
           <span class="tag tag-strong">Zero npm · Zero PII</span>
         </div>
@@ -2775,6 +2776,7 @@ const html = `<!DOCTYPE html>
                   <option value="antigravity-bitrix-seo-geo">antigravity-bitrix-seo-geo (SEO / GEO / Аналитика)</option>
                   <option value="antigravity-bitrix-qa">antigravity-bitrix-qa (QA / Тесты / Безопасность)</option>
                   <option value="antigravity-bitrix-marketing">antigravity-bitrix-marketing (CRO / Маркетинг / UX)</option>
+                  <option value="antigravity-bitrix-design">antigravity-bitrix-design (Дизайн / Motion / Visual Gate)</option>
                 </select>
               </div>
               <div class="col" style="gap:4px;">

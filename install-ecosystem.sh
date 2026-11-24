@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGINS_ARG="${1:-core,seo-geo,qa,marketing}"
+PLUGINS_ARG="${1:-core,seo-geo,qa,marketing,design}"
 WITH_IDE_PANEL="${WITH_IDE_PANEL:-1}"
 
 IFS=',' read -ra RAW_LIST <<< "$PLUGINS_ARG"
@@ -14,6 +14,7 @@ map_name() {
     seo-geo|seo|antigravity-bitrix-seo-geo) echo "antigravity-bitrix-seo-geo" ;;
     qa|antigravity-bitrix-qa) echo "antigravity-bitrix-qa" ;;
     marketing|cro|antigravity-bitrix-marketing) echo "antigravity-bitrix-marketing" ;;
+    design|ui|antigravity-bitrix-design) echo "antigravity-bitrix-design" ;;
     *) echo "" ;;
   esac
 }

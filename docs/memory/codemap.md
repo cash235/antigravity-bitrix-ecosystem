@@ -4,10 +4,11 @@
 
 | Директория | Тип | Версия | Состав |
 |---|---|---|---|
-| `antigravity-bitrix-core/` | Antigravity Plugin (Hub) | `2.5.0` | 8 скиллов, 2 субагента, 6 CLI-скриптов (`.mjs`), 7 шаблонов памяти, `rules/AGENTS.md` |
-| `antigravity-bitrix-seo-geo/` | Antigravity Plugin | `2.1.0` | 9 скиллов, 2 субагента, 5 CLI-скриптов (`.mjs`), `rules/AGENTS.md` |
+| `antigravity-bitrix-core/` | Antigravity Plugin (Hub) | `2.6.0` | 8 скиллов, 2 субагента, 6 CLI-скриптов (`.mjs`), 7 шаблонов памяти, `rules/AGENTS.md` |
+| `antigravity-bitrix-seo-geo/` | Antigravity Plugin | `3.0.0` | 12 скиллов, 2 субагента, 6 CLI-скриптов (`.mjs`, вкл. `ssrf-guard.mjs`), `rules/AGENTS.md` |
 | `antigravity-bitrix-qa/` | Antigravity Plugin | `1.0.0` | 4 скилла, 1 субагент, 1 CLI-скрипт (`bitrix-qa-preflight.mjs`), `rules/AGENTS.md` |
 | `antigravity-bitrix-marketing/` | Antigravity Plugin | `1.0.0` | 4 скилла, 1 субагент, `rules/AGENTS.md` |
+| `antigravity-bitrix-design/` | Antigravity Plugin | `1.0.0` | 3 скилла (`taste`, `motion`, `visual-gate`), 1 субагент (`bitrix-design-director`), 1 CLI-скрипт (`bitrix-design-gate.mjs`), `rules/AGENTS.md` |
 | `antigravity-bitrix-ide-panel/` | VS Code / Antigravity IDE Extension | `1.0.0` | Иконка в левом Activity Bar, боковая панель с прогресс-шкалами, полноразмерный Webview-дашборд, визуальное сохранение `.agents/permissions.json` и `velocity.json` |
 
 ## 2. Ключевые CLI-инструменты (Zero npm, Node.js 18+)

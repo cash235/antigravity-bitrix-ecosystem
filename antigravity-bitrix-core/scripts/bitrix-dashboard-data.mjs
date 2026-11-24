@@ -274,6 +274,7 @@ const ecosystem = {
   seoGeo: installedPlugins.find((p) => p.dir === "antigravity-bitrix-seo-geo") || null,
   qa: installedPlugins.find((p) => p.dir === "antigravity-bitrix-qa") || null,
   marketing: installedPlugins.find((p) => p.dir === "antigravity-bitrix-marketing") || null,
+  design: installedPlugins.find((p) => p.dir === "antigravity-bitrix-design") || null,
   legacySeoDuplicate: installedPlugins.find((p) => p.dir === "antigravity-bitrix-seo") || null,
 };
 
@@ -1150,6 +1151,7 @@ const payload = {
     seoGeo: ecosystem.seoGeo ? ecosystem.seoGeo.version : null,
     qa: ecosystem.qa ? ecosystem.qa.version : null,
     marketing: ecosystem.marketing ? ecosystem.marketing.version : null,
+    design: ecosystem.design ? ecosystem.design.version : null,
     legacySeoDuplicate: Boolean(ecosystem.legacySeoDuplicate),
     mcps: detectedMcps,
   },
@@ -1166,7 +1168,7 @@ if (jsonMode) {
 } else {
   console.log(`=== Bitrix Central Orchestrator Snapshot v2.0: ${payload.projectName} ===`);
   console.log(`Readiness Score : ${payload.readinessScore}/100 | Context Budget: ~${contextBudget.totalBaselineOverheadTokens} tok (${contextBudget.status})`);
-  console.log(`Ecosystem       : core=${payload.ecosystem.core || "OFF"}, seo-geo=${payload.ecosystem.seoGeo || "OFF"}, qa=${payload.ecosystem.qa || "OFF"}, marketing=${payload.ecosystem.marketing || "OFF"}`);
+  console.log(`Ecosystem       : core=${payload.ecosystem.core || "OFF"}, seo-geo=${payload.ecosystem.seoGeo || "OFF"}, qa=${payload.ecosystem.qa || "OFF"}, marketing=${payload.ecosystem.marketing || "OFF"}, design=${payload.ecosystem.design || "OFF"}`);
   console.log(`Structure       : ${classCount} classes (${namespaces.size} ns), ${templates.length} templates, ${ajaxEndpoints.length} AJAX, ${payload.structure.urlrewriteRules} urlrewrite`);
   console.log(`Memory          : AGENTS=${memoryFiles.rootAgents.exists}, codemap=${memoryFiles.codemap.exists}, ADR=${adrCount}, daily=${dailyCount}`);
   console.log(`Backlog         : ${payload.backlog.doneCount} done / ${payload.backlog.openCount} open (${payload.backlog.completionPct}%)`);

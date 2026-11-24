@@ -6,7 +6,7 @@
   powershell -ExecutionPolicy Bypass -File .\install-ecosystem.ps1 -Plugins core,seo-geo -WithIdePanel:$false
 #>
 param(
-    [string[]]$Plugins = @("core", "seo-geo", "qa", "marketing"),
+    [string[]]$Plugins = @("core", "seo-geo", "qa", "marketing", "design"),
     [switch]$WithIdePanel = $true
 )
 
@@ -18,10 +18,12 @@ $Map = @{
     "seo-geo"   = "antigravity-bitrix-seo-geo"
     "qa"        = "antigravity-bitrix-qa"
     "marketing" = "antigravity-bitrix-marketing"
+    "design"    = "antigravity-bitrix-design"
     "antigravity-bitrix-core"      = "antigravity-bitrix-core"
     "antigravity-bitrix-seo-geo"   = "antigravity-bitrix-seo-geo"
     "antigravity-bitrix-qa"        = "antigravity-bitrix-qa"
     "antigravity-bitrix-marketing" = "antigravity-bitrix-marketing"
+    "antigravity-bitrix-design"    = "antigravity-bitrix-design"
 }
 
 # Normalize comma-separated input

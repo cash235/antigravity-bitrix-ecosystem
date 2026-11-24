@@ -1,11 +1,11 @@
-# 1C-Bitrix Antigravity Ecosystem (4 Plugins + IDE Command Center)
+# 1C-Bitrix Antigravity Ecosystem (5 Plugins + IDE Command Center)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform: 1C-Bitrix D7](https://img.shields.io/badge/1C--Bitrix-D7-0F766E.svg)](https://dev.1c-bitrix.ru/)
 [![Node.js: 18+](https://img.shields.io/badge/Node.js-18%2B-339933.svg)](https://nodejs.org/)
 [![Dependencies: Zero npm](https://img.shields.io/badge/Dependencies-Zero%20npm-2563EB.svg)](#)
 
-Универсальная модульная экосистема из **4 независимых плагинов для Google Antigravity** и **расширения левой панели (Activity Bar) для Antigravity IDE**, созданная для профессиональной разработки, SEO/GEO-оптимизации, маркетинга (CRO) и QA любых проектов на **1С-Битрикс D7** — от корпоративного сайта до высоконагруженного мультисайтового интернет-магазина с CRM и 1С.
+Универсальная модульная экосистема из **5 независимых плагинов для Google Antigravity** и **расширения левой панели (Activity Bar) для Antigravity IDE**, созданная для профессиональной разработки, дизайна/анимаций, SEO/GEO-оптимизации, маркетинга (CRO) и QA любых проектов на **1С-Битрикс D7** — от корпоративного сайта до высоконагруженного мультисайтового интернет-магазина с CRM и 1С.
 
 > **Ключевые принципы**: **Zero npm dependencies** (только встроенные модули Node.js 18+), **Zero PII** (никаких клиентских данных), **Zero skill collisions**, строгая изоляция кастомного кода в `/local/` и **Fail-Closed** верификация.
 
@@ -15,13 +15,14 @@
 
 | Модуль | Версия | Скиллы | Субагенты | CLI-скрипты | Назначение |
 |---|---:|---:|---:|---:|---|
-| [`antigravity-bitrix-core`](antigravity-bitrix-core/) | `2.5.0` | **8** | **2** | **6** | **Ядро и Центральный Оркестратор**: многоуровневый **Cock-up Prevention Gate**, 2-шкальная матрица (`Q1–Q4 × S/M/L`), 10-блочный Мастер-Чеклист модулей CMS (`bitrix-cms-checklist.mjs`), **Live Anonymized Skill Collector + PII Sanitizer + GitHub PR Center** (`bitrix-skill-collector.mjs`), политика границ `.agents/permissions.json`, трекер ритма/спринтов и 6-вкладочный **Command Center Dashboard v2.5**. |
-| [`antigravity-bitrix-seo-geo`](antigravity-bitrix-seo-geo/) | `2.1.0` | **9** | **2** | **5** | **SEO, GEO (ИИ-поиск), Schema.org и Аналитика**: техаудит D7 (`component_epilog`, `RestartWorkarea` 404, `urlrewrite.php`), GEO 2026 (`/llms.txt`, AI-боты, капсулы), Schema.org JSON-LD/Microdata, E-commerce и мультисайтовость, GTM/GA4/Метрика, мониторинг SEO-дрейфа, анализ Screaming Frog и REST API дашборды. |
+| [`antigravity-bitrix-core`](antigravity-bitrix-core/) | `2.6.0` | **8** | **2** | **6** | **Ядро и Центральный Оркестратор**: многоуровневый **Cock-up Prevention Gate**, 2-шкальная матрица (`Q1–Q4 × S/M/L`), 10-блочный Мастер-Чеклист модулей CMS (`bitrix-cms-checklist.mjs`), **Live Anonymized Skill Collector + PII Sanitizer + GitHub PR Center** (`bitrix-skill-collector.mjs`), политика границ `.agents/permissions.json`, трекер ритма/спринтов и 6-вкладочный **Command Center Dashboard v2.6**. |
+| [`antigravity-bitrix-seo-geo`](antigravity-bitrix-seo-geo/) | `3.0.0` | **12** | **2** | **6** | **SEO, GEO, Agentic WebMCP, Local Maps & Content Gaps**: техаудит D7, GEO (`/llms.txt` + `/llms-full.txt`), Agentic Browsing / WebMCP (`bitrix-seo-agentic`), Local SEO филиалов/карт (`bitrix-seo-local`), SXO & Content Gaps (`bitrix-seo-content-gaps`), Schema.org, E-commerce, мультисайт, аналитика и **SSRF-защищённые** live-скрипты (`ssrf-guard.mjs`). |
 | [`antigravity-bitrix-qa`](antigravity-bitrix-qa/) | `1.0.0` | **4** | **1** | **1** | **QA и Production Readiness**: Browser Visual QA (`375/768/1440px`), Click-Path аудит кнопок/AJAX/состояний, Pre-Launch аудит, регрессионные smoke-тесты и автоматический preflight-сканер безопасности `bitrix-qa-preflight.mjs`. |
 | [`antigravity-bitrix-marketing`](antigravity-bitrix-marketing/) | `1.0.0` | **4** | **1** | **0** | **Маркетинг, CRO и UX**: Product Lens (ICE anti-busywork), конверсионный копирайтинг (5-секундный тест, перехват пустого поиска и Out-of-Stock), retention-кампании с CRM, взвешенная визуальная UX-рубрика. |
-| [`antigravity-bitrix-ide-panel`](antigravity-bitrix-ide-panel/) | `1.0.0` | — | — | IDE Ext | **Кнопка в левой панели (Activity Bar) Antigravity IDE / VS Code**: 1-клик открытие живого 5-вкладочного Command Center Dashboard прямо в редакторе, быстрая инициализация проектов и запуск QA Preflight. |
+| [`antigravity-bitrix-design`](antigravity-bitrix-design/) | `1.0.0` | **3** | **1** | **1** | **Дизайн-инжиниринг, Anti-AI-Slop и Motion Craft**: детерминированный подбор арт-дирекшна (`--deal`), GPU-безопасные анимации (`bitrix-motion-craft`) и Fail-Closed **Visual Finish Gate** (`1440px`/`390px`, `bitrix-design-gate.mjs`) для `/local/templates/*/` и `/manager/`. |
+| [`antigravity-bitrix-ide-panel`](antigravity-bitrix-ide-panel/) | `1.0.0` | — | — | IDE Ext | **Кнопка в левой панели (Activity Bar) Antigravity IDE / VS Code**: 1-клик открытие живого 6-вкладочного Command Center Dashboard, шкалы прогресса, визуальные редакторы границ/ритма/CMS-чеклиста и PR-центр. |
 
-**Итого**: **25 уникальных скиллов**, **6 профильных субагентов**, **10 zero-dependency CLI-скриптов**, **7 шаблонов проектной памяти** и **нативное расширение левой панели IDE**.
+**Итого**: **31 уникальный скилл** *(включая 12 в SEO/GEO + 8 в Core + 4 в QA + 4 в Marketing + 3 в Design)*, **7 профильных субагентов**, **14 zero-dependency CLI-скриптов**, **7 шаблонов проектной памяти** и **нативное расширение левой панели IDE**.
 
 ---
 
@@ -80,6 +81,7 @@ bash ./init-bitrix-project.sh /path/to/my-bitrix-site --profile store --name "My
 
 | Версия | Дата | Ключевые реализованные возможности |
 |---|---|---|
+| **`v2.6.0`** | 2026-11-24 | **`antigravity-bitrix-seo-geo` v3.0.0** (`bitrix-seo-agentic`/WebMCP, `bitrix-seo-local`, `bitrix-seo-content-gaps`, **SSRF & Egress Guard** в live-скриптах) + **новый 5-й плагин `antigravity-bitrix-design` v1.0.0** (`bitrix-design-taste`, `bitrix-motion-craft`, `bitrix-visual-gate`, `bitrix-design-director`, CLI `bitrix-design-gate.mjs`). |
 | **`v2.5.0`** | 2026-11-24 | **Live Anonymized Skill Collector & 1-Click GitHub PR Center** (`bitrix-skill-collector.mjs`): сбор паттернов в `.agents/learned-skills/`, Fail-Closed **PII & Secret Sanitizer** (10 классов утечек + prompt-injection), 6-я вкладка Дашборда **«Навыки и PR»** с автообезличиванием и подтверждаемой отправкой PR. |
 | **`v2.4.0`** | 2026-11-24 | **10-блочный Профильный Мастер-Чеклист готовности модулей 1С-Битрикс** (`bitrix-cms-checklist.mjs` + интерактивный UI с сохранением в `docs/memory/cms-checklist.json`), полная дорожная карта спринтов со сроками и задачами, визуальный редактор `.agents/permissions.json` и `velocity.json`, скрипт подготовки релизов (`scripts/prepare-release.mjs`) и просмотр `CHANGELOG.md` в Дашборде. |
 | **`v2.3.0`** | 2026-11-24 | Политика границ `.agents/permissions.json` (6 осей, 3 пресета), трекер ритма (`ч/день × дн/нед`) и расчёт дедлайнов спринтов, автодеактивация выполненных кнопок, 6-шаговый Setup Pipeline. |

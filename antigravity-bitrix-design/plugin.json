@@ -1,0 +1,21 @@
+{
+  "name": "antigravity-bitrix-design",
+  "displayName": "1C-Bitrix Design Taste & Motion",
+  "version": "1.0.0",
+  "description": "Design-engineering, Anti-AI-Slop visual craft, GPU-safe motion choreography, and Fail-Closed Visual Finish Gate (1440px/390px) for 1C-Bitrix D7 templates and /manager/ interfaces.",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "cash235",
+    "url": "https://github.com/cash235"
+  },
+  "homepage": "https://github.com/cash235/antigravity-bitrix-ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cash235/antigravity-bitrix-ecosystem.git"
+  },
+  "suggestedPrompts": [
+    "Audit our /local/templates/ UI with bitrix-design-taste and run the Fail-Closed Visual Finish Gate (1440px/390px)",
+    "Design a distinctive, non-generic 1C-Bitrix catalog/product template direction via bitrix-design-gate.mjs --deal",
+    "Review and optimize CSS/JS animations and mobile responsiveness with bitrix-motion-craft without hurting CWV"
+  ]
+}

@@ -54,6 +54,7 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
     { label: "seo-geo", ver: eco.seoGeo },
     { label: "qa", ver: eco.qa },
     { label: "marketing", ver: eco.marketing },
+    { label: "design", ver: eco.design },
   ];
 
   const qa = snapshot && snapshot.qaPreflight ? snapshot.qaPreflight : null;
@@ -275,7 +276,7 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
   </div>` : ""}
 
   <div class="section">
-    <div class="section-title">Плагины (4)</div>
+    <div class="section-title">Плагины (5)</div>
     <div class="kv-list">
       ${badges
             .map(
@@ -599,9 +600,9 @@ function activate(context) {
     }
     const picked = await vscode.window.showQuickPick(
       [
-        { label: "full", description: "Все 4 плагина (core + seo-geo + qa + marketing)" },
-        { label: "store", description: "Интернет-магазин / CRM (все 4 плагина)" },
-        { label: "corporate", description: "Корпоративный сайт / услуги (core + seo-geo + qa)" },
+        { label: "full", description: "Все 5 плагинов (core + seo-geo + qa + marketing + design)" },
+        { label: "store", description: "Интернет-магазин / CRM (все 5 плагинов)" },
+        { label: "corporate", description: "Корпоративный сайт / услуги (core + seo-geo + qa + design)" },
         { label: "minimal", description: "Минимальный (только core, минимальный контекст)" },
       ],
       { placeHolder: "Выберите профиль плагинов 1С-Битрикс для этого проекта" }

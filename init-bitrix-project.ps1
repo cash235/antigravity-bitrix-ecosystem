@@ -41,7 +41,7 @@ $NeedsInstallOrUpdate = $false
 if ($UpdatePlugins) {
     $NeedsInstallOrUpdate = $true
 } elseif (-not $SkipPluginInstall) {
-    foreach ($p in @("antigravity-bitrix-core", "antigravity-bitrix-seo-geo", "antigravity-bitrix-qa", "antigravity-bitrix-marketing")) {
+    foreach ($p in @("antigravity-bitrix-core", "antigravity-bitrix-seo-geo", "antigravity-bitrix-qa", "antigravity-bitrix-marketing", "antigravity-bitrix-design")) {
         $srcVer = Get-ManifestVersion (Join-Path $RootDir "$p\plugin.json")
         $dstVer = Get-ManifestVersion (Join-Path $GlobalPluginsRoot "$p\plugin.json")
         if (-not $dstVer) {

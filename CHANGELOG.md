@@ -2,6 +2,17 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.6.0] - 2026-11-24
+
+### Added (Sprint 5: `antigravity-bitrix-seo-geo` v3.0.0 & New 5th Plugin `antigravity-bitrix-design` v1.0.0)
+- **`PLUGIN-011` — `antigravity-bitrix-seo-geo` v3.0.0**:
+  - New skills: **`bitrix-seo-agentic`** (Lighthouse Agentic Browsing, WebMCP contracts, `/llms.txt` + `/llms-full.txt`), **`bitrix-seo-local`** (`b_catalog_store` branch pages, NAP, Yandex.Business / 2GIS / GBP + confirm-gated review triage), and **`bitrix-seo-content-gaps`** (SXO semantic clusters, demand-vs-supply content gap graph, smart-filter cannibalization & programmatic SEO).
+  - Hardened live scripts (`fetch-seo.mjs`, `geo-check.mjs`, `seo-drift.mjs`) with zero-npm **SSRF & Egress Guard** (`scripts/ssrf-guard.mjs`: blocks private/loopback/6to4/cloud metadata endpoints, validates DNS + every redirect hop, redacts credentials in URL/proxy errors).
+- **`PLUGIN-012` — New 5th Plugin `antigravity-bitrix-design` v1.0.0**:
+  - Dedicated Design Engineering & Anti-AI-Slop plugin combining `tasteskill.dev` / `Leonxlnx/taste-skill` and `emilkowalski/skills` practices for 1C-Bitrix D7 templates and `/manager/` cabinets.
+  - 3 new skills (**`bitrix-design-taste`**, **`bitrix-motion-craft`**, **`bitrix-visual-gate`**), 1 subagent (**`bitrix-design-director`** with Cock-up Prevention Gate), and zero-npm CLI **`scripts/bitrix-design-gate.mjs`** (`--deal` deterministic art direction + Fail-Closed static visual/motion gate `GATE: PASS / FAIL / SETUP`).
+  - Integrated across `install-ecosystem`, `init-bitrix-project`, `bitrix-bootstrap.mjs`, Dashboard (`5-Plugin Ecosystem`), IDE sidebar (`Плагины (5)`), and GitHub Actions CI.
+
 ## [v2.5.0] - 2026-11-24
 
 ### Added (Sprint 4: Live Anonymized Skill Collector & 1-Click GitHub PR Center)
