@@ -307,6 +307,11 @@ const viewModel = {
     weeklyCapacityHours: 10,
     calibrationFactor: 1,
     source: "default",
+    totalSprints: 0,
+    doneSprints: 0,
+    openSprints: 0,
+    overallDeadline: null,
+    allSprints: [],
     sprints: [],
   },
   setupPipeline: snapshot.setupPipeline || {
@@ -976,26 +981,104 @@ const clientScript = `
     if (hIn && !hIn.dataset.init) { hIn.value = String(v.hoursPerDay || 2); hIn.dataset.init = "1"; }
     if (dIn && !dIn.dataset.init) { dIn.value = String(v.daysPerWeek || 5); dIn.dataset.init = "1"; }
 
+    const allSprints = Array.isArray(v.allSprints) && v.allSprints.length > 0 ? v.allSprints : (v.sprints || []);
+    const totalSp = v.totalSprints != null ? v.totalSprints : allSprints.length;
+    const doneSp = v.doneSprints != null ? v.doneSprints : allSprints.filter(function (s) { return s.status === "done"; }).length;
+    const openSp = v.openSprints != null ? v.openSprints : Math.max(0, totalSp - doneSp);
+
+    const overviewEl = document.getElementById("sprintsOverviewBar");
+    if (overviewEl) {
+      overviewEl.innerHTML =
+        '<span class="tag tag-strong mono">Всего спринтов: ' + esc(totalSp) + "</span>" +
+        '<span class="tag mono"><span class="dot dot-ok"></span>Завершено: ' + esc(doneSp) + "</span>" +
+        '<span class="tag mono"><span class="dot ' + (openSp > 0 ? "dot-warn" : "dot-ok") + '"></span>Осталось: ' + esc(openSp) + "</span>" +
+        (v.overallDeadline
+          ? '<span class="tag mono">Прогноз финиша всех спринтов: ' + esc(v.overallDeadline) + "</span>"
+          : '<span class="tag tag-success mono">Все спринты завершены</span>');
+    }
+
     const listEl = document.getElementById("sprintsGrid");
-    if (!v.sprints || v.sprints.length === 0) {
-      listEl.innerHTML = '<div class="subcard text-xs muted">Все задачи в спринтах закрыты.</div>';
+    if (!allSprints || allSprints.length === 0) {
+      listEl.innerHTML = '<div class="subcard text-xs muted">Спринты не обнаружены в бэклоге.</div>';
       return;
     }
-    listEl.innerHTML = v.sprints
+
+    function renderSprintTasks(tasks) {
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+        return '<div class="text-xs muted">Задачи не указаны.</div>';
+      }
+      return (
+        '<div class="col" style="gap:4px;">' +
+        tasks
+          .map(function (t) {
+            const dot = t.done ? "dot-ok" : "dot-muted";
+            const timeParts = [esc(t.size || "M")];
+            if (t.estHours != null) timeParts.push("Оц." + esc(t.estHours) + "ч");
+            if (t.actualHours != null) timeParts.push("Факт " + esc(t.actualHours) + "ч");
+            const clStr = t.checklistTotal > 0 ? t.checklistDone + "/" + t.checklistTotal : "";
+            return (
+              '<div class="row-between" style="gap:6px;padding:4px 6px;border:1px solid var(--border);border-radius:3px;background:var(--card);">' +
+              '<div class="row" style="gap:5px;flex:1;min-width:0;">' +
+              '<span class="dot ' + dot + '"></span>' +
+              (t.id ? '<span class="mono text-xs" style="font-weight:600;">' + esc(t.id) + "</span>" : "") +
+              quadrantBadge(t.quadrant || "Q2") +
+              '<span class="text-xs" style="' + (t.done ? "opacity:0.8;" : "font-weight:500;") + '">' + esc(t.text) + "</span>" +
+              "</div>" +
+              '<div class="row" style="gap:4px;flex-shrink:0;">' +
+              '<span class="tag mono">' + timeParts.join(" · ") + "</span>" +
+              (clStr ? '<span class="tag mono" title="Чеклист приёмки">' + esc(clStr) + "</span>" : "") +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("") +
+        "</div>"
+      );
+    }
+
+    listEl.innerHTML = allSprints
       .map(function (sp) {
-        const dot = sp.overloaded ? "dot-warn" : "dot-ok";
-        const pctWidth = Math.min(100, sp.loadPct || 0);
+        const isDone = sp.status === "done";
+        const isActive = sp.status === "active";
+        const statusTag = isDone
+          ? '<span class="tag tag-success"><span class="dot dot-ok"></span>Завершён</span>'
+          : isActive
+          ? '<span class="tag tag-strong"><span class="dot dot-warn"></span>Активный</span>'
+          : '<span class="tag"><span class="dot dot-muted"></span>Запланирован</span>';
+
+        const timingTag = isDone
+          ? '<span class="tag mono">Оценка ' + esc(sp.estHours) + "ч" + (sp.actualHours ? " · Факт " + esc(sp.actualHours) + "ч" : "") + "</span>"
+          : '<span class="tag mono"><span class="dot ' + (sp.overloaded ? "dot-warn" : "dot-ok") + '"></span>' +
+            (sp.startDate ? esc(sp.startDate) + " → " : "") + esc(sp.projectedDeadline || "—") +
+            (sp.workDaysNeeded ? " (~" + esc(sp.workDaysNeeded) + " раб. дн.)" : "") + "</span>";
+
+        const pctWidth = isDone ? 100 : Math.min(100, sp.loadPct || 0);
+        const barColor = isDone ? "var(--success)" : sp.overloaded ? "var(--warning)" : "var(--primary)";
+        const statsLeft = isDone
+          ? "Задач выполнено: " + esc(sp.doneCount) + "/" + esc(sp.tasksCount) + " (100%)"
+          : "Задач: " + esc(sp.openCount) + " откр. / " + esc(sp.tasksCount) + " всего · Осталось " + esc(sp.openEstHours != null ? sp.openEstHours : sp.estHours) + "ч" + (sp.q1Count ? " · Q1:" + sp.q1Count : "");
+        const statsRight = isDone
+          ? "100% закрыто"
+          : esc(sp.loadPct) + "% нед." + (sp.overloaded ? " (перегруз)" : "");
+
+        const tasksHtml = renderSprintTasks(sp.tasks);
+        const tasksBlock = isDone
+          ? "<details><summary><span>Задачи спринта (" + esc(sp.tasksCount) + ')</span><span class="text-link lbl-open">Показать</span><span class="text-link lbl-close">Скрыть</span></summary><div class="details-body">' + tasksHtml + "</div></details>"
+          : '<div class="col" style="gap:4px;margin-top:2px;"><div class="text-xs muted" style="font-weight:600;">Задачи спринта (' + esc(sp.tasksCount) + "):</div>" + tasksHtml + "</div>";
+
         return (
-          '<div class="subcard col" style="gap:5px;">' +
+          '<div class="subcard col" style="gap:7px;">' +
           '<div class="row-between">' +
-          '<strong class="text-xs">' + esc(sp.name) + "</strong>" +
-          '<span class="tag mono"><span class="dot ' + dot + '"></span>Дедлайн: ' + esc(sp.projectedDeadline) + "</span>" +
+          statusTag +
+          timingTag +
           "</div>" +
+          '<strong style="font-size:12.5px;">' + esc(sp.name) + "</strong>" +
           '<div class="row-between text-xs muted mono">' +
-          "<span>" + sp.tasksCount + " зад. · Оценка " + sp.estHours + "ч" + (sp.q1Count ? " · Q1:" + sp.q1Count : "") + "</span>" +
-          "<span>" + sp.loadPct + "% нед." + (sp.overloaded ? " (перегруз)" : "") + "</span>" +
+          "<span>" + statsLeft + "</span>" +
+          "<span>" + statsRight + "</span>" +
           "</div>" +
-          '<div class="progress-track"><div class="progress-fill" style="width:' + pctWidth + '%;background:' + (sp.overloaded ? "var(--warning)" : "var(--primary)") + ';"></div></div>' +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pctWidth + "%;background:" + barColor + ';"></div></div>' +
+          tasksBlock +
           "</div>"
         );
       })
@@ -1907,7 +1990,8 @@ const html = `<!DOCTYPE html>
             <span id="velSourceBadge" class="tag mono">—</span>
           </div>
         </div>
-        <div id="sprintsGrid" class="grid-3"></div>
+        <div id="sprintsOverviewBar" class="row text-xs"></div>
+        <div id="sprintsGrid" class="grid-2"></div>
       </div>
 
       <div class="panel col">

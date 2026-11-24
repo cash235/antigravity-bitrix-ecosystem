@@ -192,9 +192,17 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
               const blPct = Math.max(0, Math.min(100, Number(snapshot.backlog.completionPct || 0)));
               const sp = snapshot.setupPipeline || null;
               const spPct = sp && sp.totalSteps ? Math.round((sp.completedCount / sp.totalSteps) * 100) : 0;
-              const nextSprint = snapshot.velocity && Array.isArray(snapshot.velocity.sprints) && snapshot.velocity.sprints.length > 0
-                ? snapshot.velocity.sprints[0]
-                : null;
+              const vel = snapshot.velocity || null;
+              const allSprints = vel && Array.isArray(vel.allSprints) && vel.allSprints.length > 0
+                ? vel.allSprints
+                : (vel && Array.isArray(vel.sprints) ? vel.sprints : []);
+              const totalSprints = vel && vel.totalSprints != null ? vel.totalSprints : allSprints.length;
+              const doneSprints = vel && vel.doneSprints != null
+                ? vel.doneSprints
+                : allSprints.filter((s) => s.status === "done").length;
+              const sprintsPct = totalSprints > 0 ? Math.round((doneSprints / totalSprints) * 100) : 0;
+              const nextSprint = allSprints.find((s) => s.status === "active")
+                || (vel && Array.isArray(vel.sprints) && vel.sprints.length > 0 ? vel.sprints[0] : null);
               const permLabels = {
                 safe_default: "безопасный",
                 local_dev: "локальная разр.",
@@ -223,22 +231,45 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
       </div>` : ""}
       <div class="kv-row"><span class="muted">QA Preflight</span><span class="status-inline mono"><span class="dot ${qaDot}"></span>${esc(qaText)}</span></div>
       <div class="kv-row"><span class="muted">Память</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} логов</span></div>
-      <div class="kv-row"><span class="muted">Ритм</span><span class="mono">${snapshot.velocity ? esc(snapshot.velocity.weeklyCapacityHours) + " ч/нед" : "—"}</span></div>
+      <div class="kv-row"><span class="muted">Ритм</span><span class="mono">${vel ? esc(vel.weeklyCapacityHours) + " ч/нед" : "—"}</span></div>
       <div class="kv-row"><span class="muted">Границы</span><span class="mono">${esc(permText)}</span></div>
       <div class="kv-row"><span class="muted">Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} ток.</span></div>
     </div>
   </div>
 
-  ${nextSprint ? `
+  ${totalSprints > 0 ? `
   <div class="section">
-    <div class="section-title">Текущий спринт</div>
+    <div class="section-title">Спринты · ${esc(doneSprints)}/${esc(totalSprints)} завершено</div>
     <div class="kv-list">
-      <div style="font-weight:600;">${esc(nextSprint.name)}</div>
       <div class="meter-block">
-        <div class="kv-row"><span class="muted">Загрузка (${esc(nextSprint.tasksCount)} зад. · ~${esc(nextSprint.estHours)}ч)</span><span class="mono">${esc(nextSprint.loadPct)}%</span></div>
-        <div class="meter-track"><div class="meter-fill ${nextSprint.overloaded ? "warn" : ""}" style="width:${Math.min(100, nextSprint.loadPct || 0)}%"></div></div>
+        <div class="kv-row"><span class="muted">Дорожная карта</span><span class="mono">${vel && vel.overallDeadline ? "до " + esc(vel.overallDeadline) : "100%"}</span></div>
+        <div class="meter-track"><div class="meter-fill ok" style="width:${sprintsPct}%"></div></div>
       </div>
-      <div class="kv-row"><span class="muted">Прогноз дедлайна</span><span class="mono">${esc(nextSprint.projectedDeadline)}</span></div>
+      ${allSprints
+            .map((s) => {
+              const isDone = s.status === "done";
+              const isActive = s.status === "active";
+              const dot = isDone ? "dot-ok" : isActive ? "dot-warn" : "dot-muted";
+              const shortTitle = String(s.name || "").split(/[—–-]/)[0].trim() || s.name;
+              const right = isDone
+                ? `${s.doneCount}/${s.tasksCount} · готово`
+                : `${s.openCount} зад. · до ${s.projectedDeadline || "—"}`;
+              return `<div class="kv-row" title="${esc(s.name)}"><span class="status-inline"><span class="dot ${dot}"></span><span style="${isActive ? "font-weight:600;" : ""}">${esc(shortTitle)}</span></span><span class="mono muted">${esc(right)}</span></div>`;
+            })
+            .join("")}
+      ${nextSprint && Array.isArray(nextSprint.tasks) && nextSprint.tasks.length > 0 ? `
+      <div style="margin-top:4px;padding-top:5px;border-top:1px solid var(--vscode-panel-border, rgba(128,128,128,0.2));display:flex;flex-direction:column;gap:3px;">
+        <div class="kv-row"><span class="muted">Активный (${esc(nextSprint.startDate || "сегодня")} → ${esc(nextSprint.projectedDeadline || "—")})</span><span class="mono">${esc(nextSprint.loadPct)}% нед.</span></div>
+        ${nextSprint.tasks
+          .filter((t) => !t.done)
+          .slice(0, 4)
+          .map((t) => `<div class="mono muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(t.id + " — " + t.text)}">• ${esc(t.id ? t.id + " " : "")}${esc(t.text)}</div>`)
+          .join("")}
+      </div>` : ""}
+      <button type="button" class="btn" data-cmd="openSprints" style="margin-top:4px;">
+        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M5 1.5v3M11 1.5v3M2 6.5h12" stroke-linecap="round"/></svg>
+        Все спринты и сроки
+      </button>
     </div>
   </div>` : ""}
 
@@ -513,6 +544,7 @@ function activate(context) {
       webviewView.webview.onDidReceiveMessage(async (msg) => {
         if (!msg || !msg.type) return;
         if (msg.type === "openDashboard") await openDashboardCommand();
+        else if (msg.type === "openSprints") await openDashboardCommand("backlog");
         else if (msg.type === "openPermissions") await openDashboardCommand("ecosystem");
         else if (msg.type === "refresh") {
           await refreshSnapshot();

@@ -475,7 +475,10 @@ function parseRichBacklog(mdText, sourceName) {
         cards.push(currentCard);
         currentCard = null;
       }
-      currentSprint = h2[1].replace(/[#*`]/g, "").trim();
+      currentSprint = h2[1]
+        .replace(/[#*`]/g, "")
+        .replace(/\s*\([^)]*Est:[^)]*\)\s*$/i, "")
+        .trim();
       continue;
     }
 
@@ -526,6 +529,7 @@ function parseRichBacklog(mdText, sourceName) {
   if (currentCard) cards.push(currentCard);
 
   if (cards.length > 0) {
+    const all = [];
     for (const c of cards) {
       const checklistDone = c.checklist.filter((x) => x.done).length;
       const checklistTotal = c.checklist.length;
@@ -543,14 +547,17 @@ function parseRichBacklog(mdText, sourceName) {
         checklist: c.checklist,
         checklistDone,
         checklistTotal,
+        done: isDone,
       };
+      all.push(item);
       if (isDone) done.push(item);
       else open.push(item);
     }
-    return { northStar, done, open };
+    return { northStar, done, open, all };
   }
 
   // Fallback for flat checkbox lists
+  const all = [];
   for (const line of lines) {
     const m = line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.+)$/);
     if (!m) continue;
@@ -567,11 +574,13 @@ function parseRichBacklog(mdText, sourceName) {
       checklist: [],
       checklistDone: isDone ? 1 : 0,
       checklistTotal: 1,
+      done: isDone,
     };
+    all.push(item);
     if (isDone) done.push(item);
     else open.push(item);
   }
-  return { northStar, done, open };
+  return { northStar, done, open, all };
 }
 
 const ecoBacklogText = !backlogText ? readSafe(path.join(rootDir, "BACKLOG_ECOSYSTEM.md"), 80000) : "";
@@ -582,6 +591,7 @@ const bMain = parseRichBacklog(
 const bSeo = parseRichBacklog(seoPlanText, "docs/seo/MASTER_SEO_PLAN.md");
 const allDoneTasks = [...bMain.done, ...bSeo.done];
 const allOpenTasks = [...bMain.open, ...bSeo.open];
+const allOrderedTasks = [...(bMain.all || []), ...(bSeo.all || [])];
 
 const northStar =
   bMain.northStar ||
@@ -780,42 +790,114 @@ function addWorkDays(startDate, workDaysNeeded, activeDaysPerWeek) {
   return d.toISOString().slice(0, 10);
 }
 
-// Group open tasks into sprints and project realistic deadlines sequentially
+// Group all tasks (done + open) into sprints preserving roadmap order and project realistic dates
 const sprintMap = new Map();
-for (const t of allOpenTasks) {
+for (const t of allOrderedTasks) {
   const spName = t.sprint || (t.quadrant === "Q1" ? "Спринт Q1 (Срочный)" : "Ближайший спринт");
   if (!sprintMap.has(spName)) {
-    sprintMap.set(spName, { name: spName, tasksCount: 0, q1Count: 0, estHours: 0, tasks: [] });
+    sprintMap.set(spName, {
+      name: spName,
+      tasksCount: 0,
+      doneCount: 0,
+      openCount: 0,
+      q1Count: 0,
+      estHours: 0,
+      openEstHours: 0,
+      actualHours: 0,
+      tasks: [],
+    });
   }
   const sp = sprintMap.get(spName);
-  sp.tasksCount++;
-  if (t.quadrant === "Q1") sp.q1Count++;
   const est = typeof t.estHours === "number" ? t.estHours : (t.size === "S" ? 1 : t.size === "L" ? 4.5 : t.size === "XL" ? 8 : 2.5);
+  sp.tasksCount++;
   sp.estHours = Number((sp.estHours + est).toFixed(1));
-  sp.tasks.push(t.id || t.text.slice(0, 24));
+  if (typeof t.actualHours === "number") {
+    sp.actualHours = Number((sp.actualHours + t.actualHours).toFixed(1));
+  }
+  if (t.done) {
+    sp.doneCount++;
+  } else {
+    sp.openCount++;
+    sp.openEstHours = Number((sp.openEstHours + est).toFixed(1));
+    if (t.quadrant === "Q1") sp.q1Count++;
+  }
+  sp.tasks.push({
+    id: t.id || "",
+    text: t.text || "",
+    quadrant: t.quadrant || "Q2",
+    size: t.size || "M",
+    estHours: t.estHours ?? null,
+    actualHours: t.actualHours ?? null,
+    done: Boolean(t.done),
+    checklistDone: t.checklistDone ?? 0,
+    checklistTotal: t.checklistTotal ?? 0,
+  });
 }
 
 let cursorDate = new Date();
+let activeAssigned = false;
+const allSprints = [];
 const sprints = [];
+
 for (const sp of sprintMap.values()) {
-  const calibratedHours = Number(Math.max(0.5, sp.estHours * calibrationFactor).toFixed(1));
-  const loadPct = weeklyCapacityHours > 0 ? Math.round((sp.estHours / weeklyCapacityHours) * 100) : 0;
-  const workDaysNeeded = Math.max(1, Math.ceil(sp.estHours / Math.max(0.5, effectiveHoursPerDay)));
+  const completionPct = sp.tasksCount > 0 ? Math.round((sp.doneCount / sp.tasksCount) * 100) : 0;
+  if (sp.openCount === 0) {
+    const loadPct = weeklyCapacityHours > 0 ? Math.round((sp.estHours / weeklyCapacityHours) * 100) : 0;
+    allSprints.push({
+      name: sp.name,
+      status: "done",
+      tasksCount: sp.tasksCount,
+      doneCount: sp.doneCount,
+      openCount: 0,
+      completionPct: 100,
+      q1Count: 0,
+      estHours: sp.estHours,
+      openEstHours: 0,
+      actualHours: sp.actualHours,
+      calibratedHours: sp.actualHours > 0 ? sp.actualHours : sp.estHours,
+      loadPct,
+      overloaded: false,
+      workDaysNeeded: 0,
+      startDate: null,
+      projectedDeadline: null,
+      tasks: sp.tasks,
+    });
+    continue;
+  }
+
+  const status = !activeAssigned ? "active" : "planned";
+  activeAssigned = true;
+  const startDate = cursorDate.toISOString().slice(0, 10);
+  const calibratedHours = Number(Math.max(0.5, sp.openEstHours * calibrationFactor).toFixed(1));
+  const loadPct = weeklyCapacityHours > 0 ? Math.round((sp.openEstHours / weeklyCapacityHours) * 100) : 0;
+  const workDaysNeeded = Math.max(1, Math.ceil(sp.openEstHours / Math.max(0.5, effectiveHoursPerDay)));
   const deadline = addWorkDays(cursorDate, workDaysNeeded, effectiveDaysPerWeek);
   cursorDate = new Date(deadline + "T00:00:00Z");
-  sprints.push({
+
+  const sprintObj = {
     name: sp.name,
+    status,
     tasksCount: sp.tasksCount,
+    doneCount: sp.doneCount,
+    openCount: sp.openCount,
+    completionPct,
     q1Count: sp.q1Count,
     estHours: sp.estHours,
+    openEstHours: sp.openEstHours,
+    actualHours: sp.actualHours,
     calibratedHours,
     loadPct,
     overloaded: loadPct > 100,
     workDaysNeeded,
+    startDate,
     projectedDeadline: deadline,
-  });
+    tasks: sp.tasks,
+  };
+  allSprints.push(sprintObj);
+  sprints.push(sprintObj);
 }
 
+const doneSprintsCount = allSprints.filter((s) => s.status === "done").length;
 const velocity = {
   hoursPerDay: effectiveHoursPerDay,
   daysPerWeek: effectiveDaysPerWeek,
@@ -825,6 +907,11 @@ const velocity = {
   calibrationFactor,
   source: velocitySource,
   configured: Boolean(velocityCfg),
+  totalSprints: allSprints.length,
+  doneSprints: doneSprintsCount,
+  openSprints: sprints.length,
+  overallDeadline: sprints.length > 0 ? sprints[sprints.length - 1].projectedDeadline : null,
+  allSprints,
   sprints,
 };
 
