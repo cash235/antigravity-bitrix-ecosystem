@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
  * Live URL SEO, Header, OpenGraph, Analytics & JSON-LD inspector (zero dependencies, Node 18+).
+ * Hardened with Fail-Closed SSRF & Egress Guard (ssrf-guard.mjs).
  * Usage: node fetch-seo.mjs <url> [--json]
  */
+
+import { assertSafeUrl, sanitizeUrlForError } from "./ssrf-guard.mjs";
 
 const args = process.argv.slice(2);
 const jsonMode = args.includes("--json");
@@ -35,16 +38,18 @@ export async function inspectUrl(url) {
   let response = null;
 
   for (let i = 0; i < 8; i++) {
+    await assertSafeUrl(currentUrl);
     const res = await fetch(currentUrl, {
       redirect: "manual",
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/2.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/3.0)",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
 
     if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
       const nextUrl = new URL(res.headers.get("location"), currentUrl).toString();
+      await assertSafeUrl(nextUrl);
       redirectChain.push({ status: res.status, from: currentUrl, to: nextUrl });
       currentUrl = nextUrl;
       continue;
@@ -55,7 +60,7 @@ export async function inspectUrl(url) {
   }
 
   if (!response) {
-    throw new Error(`Too many redirects for ${url}`);
+    throw new Error(`Too many redirects for ${sanitizeUrlForError(url)}`);
   }
 
   const html = await response.text();

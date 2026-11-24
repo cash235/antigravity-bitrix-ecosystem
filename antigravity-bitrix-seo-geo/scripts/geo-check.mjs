@@ -10,6 +10,7 @@
  */
 
 import { inspectUrl } from './fetch-seo.mjs';
+import { assertSafeUrl, safeFetch } from './ssrf-guard.mjs';
 
 const args = process.argv.slice(2);
 const jsonMode = args.includes('--json');
@@ -56,11 +57,13 @@ async function checkRobotsAndLlms(origin) {
         blockedBots: [],
         hasLlmsTxt: false,
         llmsLength: 0,
+        hasLlmsFullTxt: false,
+        llmsFullLength: 0,
     };
 
     try {
-        const res = await fetch(`${origin}/robots.txt`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/2.0)' },
+        const res = await safeFetch(`${origin}/robots.txt`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/3.0)' },
         });
         if (res.ok) {
             results.robotsAccessible = true;
@@ -79,8 +82,8 @@ async function checkRobotsAndLlms(origin) {
     }
 
     try {
-        const res = await fetch(`${origin}/llms.txt`, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/2.0)' },
+        const res = await safeFetch(`${origin}/llms.txt`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/3.0)' },
         });
         if (res.ok) {
             const txt = await res.text();
@@ -91,6 +94,21 @@ async function checkRobotsAndLlms(origin) {
         }
     } catch {
         // llms.txt unavailable
+    }
+
+    try {
+        const res = await safeFetch(`${origin}/llms-full.txt`, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/3.0)' },
+        });
+        if (res.ok) {
+            const txt = await res.text();
+            if (txt && txt.trim().length > 40 && !/<!DOCTYPE|<html\b/i.test(txt)) {
+                results.hasLlmsFullTxt = true;
+                results.llmsFullLength = txt.length;
+            }
+        }
+    } catch {
+        // llms-full.txt optional
     }
 
     return results;
@@ -143,11 +161,11 @@ function analyzePageContent(html, seoData) {
 }
 
 async function main() {
-    const parsedUrl = new URL(targetUrl);
+    const parsedUrl = await assertSafeUrl(targetUrl);
     const origin = parsedUrl.origin;
 
-    const rawRes = await fetch(targetUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/2.0)' },
+    const rawRes = await safeFetch(targetUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AntigravityBitrixSEOGEO/3.0)' },
     });
     const html = await rawRes.text();
 

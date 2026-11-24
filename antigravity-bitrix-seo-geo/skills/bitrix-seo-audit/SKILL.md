@@ -14,8 +14,8 @@ Use this skill when auditing any 1C-Bitrix website — from a brochure/corporate
 ## Workflow
 
 1. **Identify Site Archetype**:
-   - **Simple / Corporate / Service site**: Focus on Technical SEO, On-Page, `Organization`/`LocalBusiness`/`Service`/`FAQPage` Schema, GEO (`/llms.txt`, citability), Analytics, and Core Web Vitals.
-   - **Single-Site or Multisite E-commerce**: Add `bitrix-seo-ecommerce` (smart filter facets, pagination, out-of-stock, duplicate SKUs, `Product`+`Offer` Merchant Listings) and `bitrix-seo-multisite` (per-domain `robots.txt`/`sitemap.xml`/`llms.txt`, `hreflang`, isolated NAP/currency).
+   - **Simple / Corporate / Service site**: Focus on Technical SEO, On-Page, `Organization`/`LocalBusiness`/`Service`/`FAQPage` Schema, GEO (`/llms.txt`, citability), Agentic Readiness (`bitrix-seo-agentic`), Local SEO (`bitrix-seo-local`), Analytics, and Core Web Vitals.
+   - **Single-Site or Multisite E-commerce**: Add `bitrix-seo-ecommerce` (smart filter facets, pagination, out-of-stock, duplicate SKUs, `Product`+`Offer` Merchant Listings), `bitrix-seo-content-gaps` (SXO clusters, cannibalization, programmatic smart-filter landings), `bitrix-seo-local` (`b_catalog_store` branches/maps), and `bitrix-seo-multisite` (per-domain `robots.txt`/`sitemap.xml`/`llms.txt`, `hreflang`, isolated NAP/currency).
 
 2. **Static Codebase Audit** (run from plugin `scripts/`):
    ```bash

@@ -13,6 +13,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { inspectUrl } from "./fetch-seo.mjs";
+import { assertSafeUrl } from "./ssrf-guard.mjs";
 
 const DRIFT_DIR = path.join(os.homedir(), ".cache", "antigravity-bitrix-seo-geo", "drift");
 fs.mkdirSync(DRIFT_DIR, { recursive: true });
@@ -31,6 +32,7 @@ function getBaselinePath(url) {
 }
 
 async function cmdBaseline(url) {
+  await assertSafeUrl(url);
   const snapshot = await inspectUrl(url);
   const file = getBaselinePath(url);
   const payload = {
@@ -43,6 +45,7 @@ async function cmdBaseline(url) {
 }
 
 async function cmdCompare(url) {
+  await assertSafeUrl(url);
   const file = getBaselinePath(url);
   if (!fs.existsSync(file)) {
     console.error(`No baseline found for ${normalizeUrl(url)}. Run 'baseline <url>' first.`);

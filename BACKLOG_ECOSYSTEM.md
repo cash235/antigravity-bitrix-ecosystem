@@ -46,7 +46,7 @@
 | **Спринт 3** | `PLUGIN-017` | Автоматизация релизов (`CHANGELOG.md`, GitHub Releases, обзор реализованных фич в Дашборде) | `Q1` | `S` | `1.5 ч` | `0.2 ч` | Выполнено (`100%` DoD) |
 | **Спринт 3** | `PLUGIN-005` | 10-блочный Профильный Мастер-Чеклист готовности модулей 1С-Битрикс | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 4** | `PLUGIN-001` | Live Anonymized Skill Collector & 1-Click GitHub PR Center | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
-| **Спринт 5** | `PLUGIN-011` | Апгрейд `antigravity-bitrix-seo-geo` v3.0 (`claude-seo v2.6` + `seo-local` + `InfraNodus`/`Ahrefs`) | `Q2` | `L` | `5.0 ч` | `—` | Запланировано |
+| **Спринт 5** | `PLUGIN-011` | Апгрейд `antigravity-bitrix-seo-geo` v3.0 (`claude-seo v2.6` + `seo-local` + `InfraNodus`/`Ahrefs`) | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 5** | `PLUGIN-012` | Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` + `Leonxlnx/taste-skill` + `emilkowalski/skills` + Visual Finish Gate `1440/390px`) | `Q2` | `L` | `5.5 ч` | `—` | Запланировано |
 | **Спринт 6** | `PLUGIN-013` | Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `Marvin`) | `Q2` | `L` | `4.5 ч` | `—` | Запланировано |
 | **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `—` | Запланировано |
@@ -176,14 +176,14 @@
 ## Спринт 5 — Апгрейд SEO/GEO v3.0 и новый 5-й плагин `antigravity-bitrix-design` (`Q2`, `Est: 10.5 ч`)
 
 ### `PLUGIN-011` — Апгрейд `antigravity-bitrix-seo-geo` v3.0 (по мотивам `AgriciDaniel/claude-seo v2.6` + `get-ryze.ai/seo-local` + `InfraNodus` / `Ahrefs`)
-- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `—`
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `0.4 ч`
 - **Бизнес-ценность**: закрывает новые направления 2026 года (Agentic Browsing / WebMCP, локальное SEO и карты для филиалов 1С-Битрикс, граф контентных пробелов и защита от каннибализации умного фильтра), удерживая `antigravity-bitrix-seo-geo` на уровне мировых лидеров (`claude-seo`).
 - **Чеклист приёмки (DoD)**:
-  - [ ] Добавлен скилл **`bitrix-seo-agentic`** (из `claude-seo/seo-agentic`): аудит готовности сайта 1С-Битрикс к AI-агентам (Lighthouse Agentic Browsing, WebMCP, структурированные формы/действия, `/llms.txt` + `/llms-full.txt`).
-  - [ ] Добавлен скилл **`bitrix-seo-local`** (из `claude-seo/seo-local` + `get-ryze.ai/seo-local`): аудит локального SEO, филиалов/складов Bitrix, NAP-консистентности, Яндекс.Бизнес / 2ГИС / Google Business Profile и триаж отзывов (строго с confirm-gate на запись).
-  - [ ] Добавлен скилл **`bitrix-seo-content-gaps`** (из `claude-seo/seo-cluster`, `seo-sxo`, `seo-programmatic`, `InfraNodus`, `Ahrefs`): граф пробелов спроса vs предложения, проверка каннибализации разделов/фильтров, programmatic SEO посадочных умного фильтра, рецепты подключения живых MCP (`Semrush` / `Ahrefs` / `Bing Webmaster`).
-  - [ ] В live-скрипты `antigravity-bitrix-seo-geo/scripts/*.mjs` добавлен **SSRF & Egress Guard** (по образцу `claude-seo v2.6.2`: блокировка private/loopback/cloud metadata адресов и санитизация паролей в ошибках прокси).
-  - [ ] Пройдены `node --check`, проверка 0 коллизий скиллов и smoke-тесты CLI-скриптов.
+  - [x] Добавлен скилл **`bitrix-seo-agentic`** (из `claude-seo/seo-agentic`): аудит готовности сайта 1С-Битрикс к AI-агентам (Lighthouse Agentic Browsing, WebMCP, структурированные формы/действия, `/llms.txt` + `/llms-full.txt`).
+  - [x] Добавлен скилл **`bitrix-seo-local`** (из `claude-seo/seo-local` + `get-ryze.ai/seo-local`): аудит локального SEO, филиалов/складов Bitrix, NAP-консистентности, Яндекс.Бизнес / 2ГИС / Google Business Profile и триаж отзывов (строго с confirm-gate на запись).
+  - [x] Добавлен скилл **`bitrix-seo-content-gaps`** (из `claude-seo/seo-cluster`, `seo-sxo`, `seo-programmatic`, `InfraNodus`, `Ahrefs`): граф пробелов спроса vs предложения, проверка каннибализации разделов/фильтров, programmatic SEO посадочных умного фильтра, рецепты подключения живых MCP (`Semrush` / `Ahrefs` / `Bing Webmaster`).
+  - [x] В live-скрипты `antigravity-bitrix-seo-geo/scripts/*.mjs` добавлен **SSRF & Egress Guard** (по образцу `claude-seo v2.6.2`: блокировка private/loopback/cloud metadata адресов и санитизация паролей в ошибках прокси).
+  - [x] Пройдены `node --check`, проверка 0 коллизий скиллов и smoke-тесты CLI-скриптов.
 
 ### `PLUGIN-012` — Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` / `Leonxlnx/taste-skill` + `emilkowalski/skills` + Visual Finish Gate)
 - **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.5 ч` · **Факт (`Actual`)**: `—`

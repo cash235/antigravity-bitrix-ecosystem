@@ -1,8 +1,8 @@
 {
   "name": "antigravity-bitrix-seo-geo",
   "displayName": "Bitrix SEO & GEO",
-  "version": "2.1.0",
-  "description": "Universal SEO, GEO (AI Search), Web Analytics, Schema.org, E-commerce, Drift Monitoring, and REST API Reporting plugin for 1C-Bitrix D7 projects — from simple corporate sites to multisite catalogs.",
+  "version": "3.0.0",
+  "description": "Universal SEO, GEO (AI Search), Agentic Browsing / WebMCP, Local SEO & Maps, Semantic Content Gaps, Web Analytics, Schema.org, E-commerce, SSRF-hardened Drift Monitoring, and REST API Reporting plugin for 1C-Bitrix D7 projects.",
   "logo": "assets/logo.svg",
   "author": {
     "name": "cash235",
