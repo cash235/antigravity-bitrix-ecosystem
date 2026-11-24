@@ -115,6 +115,9 @@ jobs:
           console.log(`Validated ${plugins.length} plugins (${seenSkills.size} unique skills, ${seenAgents.size} unique agents) + IDE panel.`);
           EOF
 
+      - name: Run Skill Security & Prompt-Injection Scanner
+        run: node scripts/skill-security-scan.mjs .
+
       - name: Guard against private keys and internal handoff files
         run: |
           if find . -name "HANDOFF_*.md" -not -path "./.git/*" | grep -q .; then

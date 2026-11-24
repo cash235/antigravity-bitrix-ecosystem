@@ -14,6 +14,7 @@
  */
 
 import { execFileSync } from "node:child_process";
+import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -69,7 +70,8 @@ for (let i = 0; i < args.length; i++) {
 }
 
 const targetDir = path.resolve(targetArg || process.cwd());
-const profile = (getFlagValue("--profile") || "full").toLowerCase();
+const explicitProfile = getFlagValue("--profile");
+let profile = (explicitProfile || "auto").toLowerCase();
 const customPluginsRaw = getFlagValue("--plugins");
 const permissionsProfile = (getFlagValue("--permissions-profile") || "safe_default").toLowerCase();
 const projectName = getFlagValue("--name") || path.basename(targetDir);
@@ -77,6 +79,89 @@ const updateConfig = args.includes("--update-config");
 const force = args.includes("--force");
 const dryRun = args.includes("--dry-run");
 const jsonMode = args.includes("--json");
+
+/**
+ * Auto-detect 1C-Bitrix stack (catalog/sale, CRM, multisite, 1C exchange, templates) to pick lean plugin stack.
+ * @param {string} root
+ */
+function detectBitrixStack(root) {
+  const safeRead = (p) => {
+    try { return fs.existsSync(p) ? fs.readFileSync(p, "utf8").slice(0, 60000) : ""; }
+    catch { return ""; }
+  };
+  const initPhp = safeRead(path.join(root, "local", "php_interface", "init.php"));
+  const urlrewrite = safeRead(path.join(root, "urlrewrite.php"));
+  const codemap = safeRead(path.join(root, "docs", "memory", "codemap.md"));
+  const corpus = `${initPhp}\n${urlrewrite}\n${codemap}`;
+
+  const tplDir = path.join(root, "local", "templates");
+  const templatesCount = fs.existsSync(tplDir)
+    ? fs.readdirSync(tplDir, { withFileTypes: true }).filter((d) => d.isDirectory()).length
+    : 0;
+  const hasCatalogSale =
+    fs.existsSync(path.join(root, "bitrix", "modules", "sale")) ||
+    fs.existsSync(path.join(root, "bitrix", "modules", "catalog")) ||
+    /Bitrix\\Sale|Bitrix\\Catalog|sale\.order|catalog\.smart\.filter/i.test(corpus);
+  const hasCrm =
+    fs.existsSync(path.join(root, "bitrix", "modules", "crm")) ||
+    /Bitrix\\Crm|CCrmDeal|bitrix24|битрикс24/i.test(corpus);
+  const has1cExchange =
+    /1c_exchange|OnSuccessCatalogImport1C|OnBeforeCatalogImport1C|sale\.export/i.test(corpus);
+  const hasMultisite =
+    /SITE_ID\s*===?\s*['"]s[2-9]['"]|мультисайт|hreflang/i.test(corpus);
+  const hasLocalOrBitrix =
+    fs.existsSync(path.join(root, "local")) ||
+    fs.existsSync(path.join(root, "bitrix")) ||
+    fs.existsSync(path.join(root, "urlrewrite.php"));
+
+  let recommendedProfile = "minimal";
+  if (hasCatalogSale || hasCrm || has1cExchange) recommendedProfile = "store";
+  else if (templatesCount > 0 || hasMultisite || hasLocalOrBitrix) recommendedProfile = "corporate";
+
+  return {
+    hasCatalogSale,
+    hasCrm,
+    has1cExchange,
+    hasMultisite,
+    templatesCount,
+    recommendedProfile,
+  };
+}
+
+/**
+ * Compute deterministic SHA-256 bundle hash for an installed plugin directory (autoskills lockfile pattern).
+ * @param {string} pluginDir
+ * @returns {string | null}
+ */
+function computePluginSha256(pluginDir) {
+  if (!fs.existsSync(pluginDir)) return null;
+  const hash = crypto.createHash("sha256");
+  /** @type {string[]} */
+  const files = [];
+  const walk = (dir, depth = 0) => {
+    if (depth > 4) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name.startsWith(".") || e.name === "node_modules") continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (/\.(json|md|mjs|js|svg)$/i.test(e.name)) files.push(full);
+    }
+  };
+  walk(pluginDir);
+  files.sort((a, b) => a.localeCompare(b));
+  for (const f of files) {
+    const rel = path.relative(pluginDir, f).replace(/\\/g, "/");
+    hash.update(rel + "\n");
+    hash.update(fs.readFileSync(f));
+    hash.update("\n");
+  }
+  return hash.digest("hex");
+}
+
+const detectedStack = detectBitrixStack(targetDir);
+if (profile === "auto") {
+  profile = detectedStack.recommendedProfile;
+}
 
 /** @type {Record<string, string>} */
 const PLUGIN_ALIASES = {
@@ -475,7 +560,29 @@ const manifestJsonContent = JSON.stringify(
   2
 ) + "\n";
 
+const pluginsLockEntries = {};
+for (const name of selectedPlugins) {
+  const dir = path.join(globalPluginsDir, name);
+  const sha256 = computePluginSha256(dir);
+  pluginsLockEntries[name] = {
+    version: installedVersions[name] || "not-installed",
+    sha256: sha256 || null,
+  };
+}
+const pluginsLockJsonContent = JSON.stringify(
+  {
+    schemaVersion: "1.0",
+    generatedAt: `${yyyy}-${mm}-${dd}`,
+    profile: customPluginsRaw ? "custom" : profile,
+    detectedStack,
+    plugins: pluginsLockEntries,
+  },
+  null,
+  2
+) + "\n";
+
 writeTargetFile(".agents/plugins.json", pluginsJsonContent, updateConfig);
+writeTargetFile(".agents/plugins-lock.json", pluginsLockJsonContent, updateConfig);
 writeTargetFile(".agents/permissions.json", permissionsJsonContent);
 writeTargetFile(".gitignore", gitignoreContent);
 writeTargetFile("AGENTS.md", renderTemplate("AGENTS.project.md"));
@@ -500,6 +607,7 @@ const result = {
   targetDir,
   projectName,
   detectedStage,
+  detectedStack,
   profile: customPluginsRaw ? "custom" : profile,
   selectedPlugins,
   envCheck,

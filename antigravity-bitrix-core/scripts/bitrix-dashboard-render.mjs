@@ -341,6 +341,7 @@ const viewModel = {
     skills: [],
   },
   pipelineRuns: Array.isArray(snapshot.pipelineRuns) ? snapshot.pipelineRuns : [],
+  pluginsLock: snapshot.pluginsLock || { exists: false, status: "missing", checkedCount: 0, driftedPlugins: [] },
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -1893,6 +1894,21 @@ const clientScript = `
         ? DATA.mcps.map(function (m) { return '<span class="tag tag-strong mono">' + esc(m) + "</span>"; }).join("")
         : '<span class="text-xs muted">MCP-серверы не обнаружены</span>';
 
+    const lockBadge = document.getElementById("pluginsLockBadge");
+    if (lockBadge && DATA.pluginsLock) {
+      const pl = DATA.pluginsLock;
+      if (pl.status === "verified") {
+        lockBadge.className = "tag tag-success mono";
+        lockBadge.innerHTML = '<span class="dot dot-ok"></span>SHA-256 Lock: OK (' + esc(pl.checkedCount) + ")";
+      } else if (pl.status === "drift") {
+        lockBadge.className = "tag tag-warning mono";
+        lockBadge.innerHTML = '<span class="dot dot-warn"></span>SHA-256 Lock: обновлено (' + esc(pl.driftedPlugins.length) + ")";
+      } else {
+        lockBadge.className = "tag mono";
+        lockBadge.textContent = "SHA-256 Lock: нет";
+      }
+    }
+
     const clPanel = document.getElementById("changelogPanel");
     const clList = document.getElementById("changelogList");
     const clCount = document.getElementById("changelogCountBadge");
@@ -2450,7 +2466,7 @@ const html = `<!DOCTYPE html>
       <div class="row-between" style="align-items:flex-start;">
         <div class="col" style="gap:4px;flex:1;min-width:260px;">
           <div class="row">
-            <span class="tag tag-strong">Central Orchestrator v2.5</span>
+            <span class="tag tag-strong">Central Orchestrator v3.0</span>
             <span class="tag">5-Plugin Ecosystem</span>
             <span class="text-xs muted mono" id="scanTimeEl">Скан: —</span>
           </div>
@@ -2732,7 +2748,10 @@ const html = `<!DOCTYPE html>
             <h2 class="title-md">Экосистема 1С-Битрикс (5 плагинов)</h2>
             <div class="text-xs muted">core · seo-geo · qa · marketing · design — независимые модули без npm-зависимостей.</div>
           </div>
-          <span class="tag tag-strong">Zero npm · Zero PII</span>
+          <div class="row">
+            <span id="pluginsLockBadge" class="tag mono">SHA-256 Lock: —</span>
+            <span class="tag tag-strong">Zero npm · Zero PII</span>
+          </div>
         </div>
         <div id="ecosystemGrid" class="grid-2"></div>
       </div>

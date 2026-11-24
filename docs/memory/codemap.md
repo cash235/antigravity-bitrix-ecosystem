@@ -4,10 +4,10 @@
 
 | Директория | Тип | Версия | Состав |
 |---|---|---|---|
-| `antigravity-bitrix-core/` | Antigravity Plugin (Hub) | `2.6.0` | 8 скиллов, 2 субагента, 6 CLI-скриптов (`.mjs`), 7 шаблонов памяти, `rules/AGENTS.md` |
+| `antigravity-bitrix-core/` | Antigravity Plugin (Hub) | `3.0.0` | 8 скиллов, 2 субагента, 8 CLI-скриптов (`.mjs`), `hooks/hooks.json`, 7 шаблонов памяти, `rules/AGENTS.md` |
 | `antigravity-bitrix-seo-geo/` | Antigravity Plugin | `3.0.0` | 12 скиллов, 2 субагента, 6 CLI-скриптов (`.mjs`, вкл. `ssrf-guard.mjs`), `rules/AGENTS.md` |
 | `antigravity-bitrix-qa/` | Antigravity Plugin | `1.0.0` | 4 скилла, 1 субагент, 1 CLI-скрипт (`bitrix-qa-preflight.mjs`), `rules/AGENTS.md` |
-| `antigravity-bitrix-marketing/` | Antigravity Plugin | `1.0.0` | 4 скилла, 1 субагент, `rules/AGENTS.md` |
+| `antigravity-bitrix-marketing/` | Antigravity Plugin | `2.0.0` | 6 скиллов, 1 субагент, `rules/AGENTS.md` |
 | `antigravity-bitrix-design/` | Antigravity Plugin | `1.0.0` | 3 скилла (`taste`, `motion`, `visual-gate`), 1 субагент (`bitrix-design-director`), 1 CLI-скрипт (`bitrix-design-gate.mjs`), `rules/AGENTS.md` |
 | `antigravity-bitrix-ide-panel/` | VS Code / Antigravity IDE Extension | `1.0.0` | Иконка в левом Activity Bar, боковая панель с прогресс-шкалами, полноразмерный Webview-дашборд, визуальное сохранение `.agents/permissions.json` и `velocity.json` |
 
@@ -18,6 +18,9 @@
 - `antigravity-bitrix-core/scripts/bitrix-skill-collector.mjs` — сборщик накопленных навыков (`.agents/learned-skills/`), Fail-Closed PII & Secret Sanitizer (10 классов + prompt-injection) и генератор GitHub PR.
 - `antigravity-bitrix-core/scripts/bitrix-cms-checklist.mjs` — генератор и локальный автосканер 10-блочного Мастер-Чеклиста готовности модулей 1С-Битрикс под 5 архетипов (`docs/memory/cms-checklist.json`).
 - `antigravity-bitrix-core/scripts/bitrix-bootstrap.mjs` — 1-командная инициализация проектов (`.agents/plugins.json`, `.agents/permissions.json`, `.gitignore`, `AGENTS.md`, `docs/memory/*`, `docs/backlog.md`, детектор локальных оверрайдов).
+- `antigravity-bitrix-core/scripts/bitrix-memory-search.mjs` — полнотекстовый поиск по `docs/memory/`, `docs/daily/`, ADR и «утренний бриф старта сессии» (`--brief`).
+- `antigravity-bitrix-core/scripts/bitrix-hook-runner.mjs` + `hooks/hooks.json` — lifecycle-хуки Antigravity (`core-isolation` защита `/bitrix/`, `post-edit-lint`, `pre-compact` снапшот).
+- `scripts/skill-security-scan.mjs` — CI-сканер Prompt-Injection, Supply-Chain и Trojan Source для всех `SKILL.md`, `agents/*.md` и `rules/*.md`.
 - `scripts/prepare-release.mjs` — подготовка release notes из `CHANGELOG.md`, `BACKLOG_ECOSYSTEM.md`, манифестов `plugin.json` и `git log` + проверка версий (`--dry-run` / `--json`).
 - Корневые оркестрационные скрипты: `install-ecosystem.ps1`/`.sh`, `init-bitrix-project.ps1`/`.sh`.
 

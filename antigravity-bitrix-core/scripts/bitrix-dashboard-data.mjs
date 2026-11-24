@@ -10,6 +10,7 @@
  */
 
 import { execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -1019,6 +1020,56 @@ if (fs.existsSync(pipelineRunsPath)) {
   }
 }
 
+// 6.12. Plugins SHA-256 Lock Integrity Check (.agents/plugins-lock.json, PLUGIN-016)
+function hashPluginBundle(dir) {
+  if (!fs.existsSync(dir)) return null;
+  const h = crypto.createHash("sha256");
+  const files = [];
+  const walk = (d, depth = 0) => {
+    if (depth > 4) return;
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (e.name.startsWith(".") || e.name === "node_modules") continue;
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (/\.(json|md|mjs|js|svg)$/i.test(e.name)) files.push(full);
+    }
+  };
+  walk(dir);
+  files.sort((a, b) => a.localeCompare(b));
+  for (const f of files) {
+    h.update(path.relative(dir, f).replace(/\\/g, "/") + "\n");
+    h.update(fs.readFileSync(f));
+    h.update("\n");
+  }
+  return h.digest("hex");
+}
+
+const lockPath = path.join(rootDir, ".agents", "plugins-lock.json");
+let pluginsLock = { exists: false, status: "missing", checkedCount: 0, driftedPlugins: [] };
+if (fs.existsSync(lockPath)) {
+  try {
+    const lockData = JSON.parse(readSafe(lockPath, 20000).replace(/^\uFEFF/, ""));
+    const entries = lockData.plugins || {};
+    const drifted = [];
+    let checked = 0;
+    for (const [pName, info] of Object.entries(entries)) {
+      if (!info || !info.sha256) continue;
+      checked++;
+      const liveHash = hashPluginBundle(path.join(pluginsRoot, pName));
+      if (!liveHash || liveHash !== info.sha256) drifted.push(pName);
+    }
+    pluginsLock = {
+      exists: true,
+      status: drifted.length === 0 ? "verified" : "drift",
+      generatedAt: lockData.generatedAt || null,
+      checkedCount: checked,
+      driftedPlugins: drifted,
+    };
+  } catch {
+    pluginsLock = { exists: true, status: "invalid", checkedCount: 0, driftedPlugins: [] };
+  }
+}
+
 // 7. Automated Heuristic PM & Orchestrator Signals
 const pmSignals = [];
 if (qaPreflight && Array.isArray(qaPreflight.critical) && qaPreflight.critical.length > 0) {
@@ -1145,6 +1196,7 @@ const payload = {
   cmsChecklist,
   learnedSkills,
   pipelineRuns,
+  pluginsLock,
   structure: {
     hasLocalDir: fs.existsSync(localDir),
     hasBitrixDir: fs.existsSync(path.join(rootDir, "bitrix")),

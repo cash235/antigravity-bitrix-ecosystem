@@ -2,6 +2,18 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v3.0.0] - 2026-11-24
+
+### Added (Sprint 7: Marketing v2.0, Auto-Stack Detection, SHA-256 Lock & Prompt-Injection CI — 100% Roadmap Complete!)
+- **`PLUGIN-015` — `antigravity-bitrix-marketing` v2.0.0**:
+  - Added **`bitrix-landing-audit`** (39-point landing/product/checkout conversion audit matrix for 1C-Bitrix).
+  - Added **`bitrix-paid-ab-analytics`** (CPA/ROAS & wasted spend diagnostics for Yandex.Direct/Google Ads, Composite-safe A/B test rigor, plain-language owner reports with confirm-gate).
+  - Enhanced `bitrix-growth-strategist` with **AI Brand Visibility / Citation Gap** synergy (`bitrix-seo-content-gaps`) and Structured Verdict Contract.
+- **`PLUGIN-016` — Auto-Stack Detection, SHA-256 Lockfile & Skill Security CI**:
+  - `bitrix-bootstrap.mjs` now auto-detects 1C-Bitrix stack (`sale/catalog`, `crm`, `1C`, multisite, templates) with `--profile auto` & `--dry-run`, and writes deterministic **`.agents/plugins-lock.json`** (SHA-256 bundle hashes).
+  - `bitrix-dashboard-data.mjs` + `bitrix-dashboard-render.mjs` verify live SHA-256 integrity (`SHA-256 Lock: OK`).
+  - Added zero-npm **`scripts/skill-security-scan.mjs`** (Prompt-Injection, pipe-to-shell, encoded PowerShell, Trojan Source BiDi, covert exfiltration scanner) wired into `.github/workflows/ci.yml`.
+
 ## [v2.7.0] - 2026-11-24
 
 ### Added (Sprint 6: Next-Gen Orchestration & Memory v2.0)

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "templateVersion": "2.7.0",
+  "templateVersion": "3.0.0",
   "projectType": "antigravity-bitrix-ecosystem",
   "updatedAt": "2026-11-24",
   "infrastructureFiles": [
