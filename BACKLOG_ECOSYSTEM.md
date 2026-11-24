@@ -43,8 +43,15 @@
 | **Спринт 2** | `PLUGIN-006` | Спринты, расчёт ритма оператора (ч/день, ч/нед) и реалистичные дедлайны | `Q2` | `L` | `4.0 ч` | `0.3 ч` | Выполнено (`100%` DoD) |
 | **Спринт 2** | `PLUGIN-003` | Автодеактивация выполненных одноразовых кнопок и инструкций | `Q2` | `S` | `1.0 ч` | `0.1 ч` | Выполнено (`100%` DoD) |
 | **Спринт 2** | `PLUGIN-004` | Пошаговый маршрут первичной настройки (Step-by-Step Setup Pipeline) | `Q2` | `M` | `2.0 ч` | `0.1 ч` | Выполнено (`100%` DoD) |
+| **Спринт 3** | `PLUGIN-017` | Автоматизация релизов (`CHANGELOG.md`, GitHub Releases, обзор реализованных фич в Дашборде) | `Q1` | `S` | `1.5 ч` | `—` | Следующая |
 | **Спринт 3** | `PLUGIN-005` | 10-блочный Профильный Мастер-Чеклист готовности модулей 1С-Битрикс | `Q2` | `L` | `5.0 ч` | `—` | Следующая |
 | **Спринт 4** | `PLUGIN-001` | Live Anonymized Skill Collector & 1-Click GitHub PR Center | `Q2` | `L` | `5.0 ч` | `—` | Запланировано |
+| **Спринт 5** | `PLUGIN-011` | Апгрейд `antigravity-bitrix-seo-geo` v3.0 (`claude-seo v2.6` + `seo-local` + `InfraNodus`/`Ahrefs`) | `Q2` | `L` | `5.0 ч` | `—` | Запланировано |
+| **Спринт 5** | `PLUGIN-012` | Новый 5-й плагин `antigravity-bitrix-design` (`taste-skill` Anti-AI-Slop + Visual Finish Gate `1440/390px`) | `Q2` | `L` | `5.5 ч` | `—` | Запланировано |
+| **Спринт 6** | `PLUGIN-013` | Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `Marvin`) | `Q2` | `L` | `4.5 ч` | `—` | Запланировано |
+| **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `—` | Запланировано |
+| **Спринт 7** | `PLUGIN-015` | Расширение `antigravity-bitrix-marketing` v2.0 (39-pt LP audit, A/B, CPA/ROAS, AI Visibility по `marketing-skills`) | `Q2` | `M` | `3.0 ч` | `—` | Запланировано |
+| **Спринт 7** | `PLUGIN-016` | Автодетект стека 1С-Битрикс, `plugins-lock.json` (SHA-256), `--dry-run` и CI Prompt-Injection Scanner (`autoskills`) | `Q2` | `M` | `3.0 ч` | `—` | Запланировано |
 
 ---
 
@@ -122,7 +129,16 @@
 
 ---
 
-## Спринт 3 — Мастер-Чеклист готовности всех модулей 1С-Битрикс (`Q2`, `Est: 5.0 ч`)
+## Спринт 3 — Релиз-менеджмент и Мастер-Чеклист готовности всех модулей 1С-Битрикс (`Q1`/`Q2`, `Est: 6.5 ч`)
+
+### `PLUGIN-017` — Автоматизация релизов (`CHANGELOG.md`, GitHub Releases) и обзор реализованных фич в Дашборде
+- **Шкалы**: `[Q1: Важно + Срочно]` · `[S: Простая]` · **Оценка (`Est`)**: `1.5 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: позволяет оператору и пользователям GitHub за 10 секунд видеть все реализованные фичи и точный diff каждой версии без ручной сборки описаний релизов (включая задел под витрину документации в стиле `LoopTroop-Website`).
+- **Чеклист приёмки (DoD)**:
+  - [ ] Создан zero-dependency скрипт `scripts/prepare-release.mjs`: собирает изменения из `CHANGELOG.md` + `BACKLOG_ECOSYSTEM.md` + `git log`, проверяет синхронность версий в `plugin.json` и формирует готовый Markdown для `gh release create`.
+  - [ ] В Command Center Dashboard (вкладка «Плагины и Границы») добавлен компактный блок **«История версий (Changelog)»**, читающий `CHANGELOG.md`.
+  - [ ] В `README.md` добавлена наглядная таблица возможностей по версиям со ссылкой на [GitHub Releases](https://github.com/cash235/antigravity-bitrix-ecosystem/releases).
+  - [ ] Пройдена проверка `node --check` и тестовый прогон `--dry-run`.
 
 ### `PLUGIN-005` — Профильный 10-блочный Мастер-Чеклист готовности CMS (включая Read-Only QA витрины)
 - **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `—`
@@ -154,3 +170,69 @@
   - [ ] Реализован детерминированный `PII & Secret Sanitizer`, очищающий/блокирующий домены, пароли, токены, API-ключи, email, пути к серверам и персональные данные.
   - [ ] В Command Center Dashboard добавлена вкладка **«Накопленные навыки и GitHub PR»**: человеческая расшифровка каждого навыка, просмотр обезличенного содержимого, чекбоксы исключения/удаления и кнопка **«Отправить в GitHub»** (создаёт Pull Request на ревью в `cash235/antigravity-bitrix-ecosystem`).
   - [ ] Пройдены негативные тесты Sanitizer (намеренная подстановка токена/домена/email должна жёстко блокироваться).
+
+---
+
+## Спринт 5 — Апгрейд SEO/GEO v3.0 и новый 5-й плагин `antigravity-bitrix-design` (`Q2`, `Est: 10.5 ч`)
+
+### `PLUGIN-011` — Апгрейд `antigravity-bitrix-seo-geo` v3.0 (по мотивам `AgriciDaniel/claude-seo v2.6` + `get-ryze.ai/seo-local` + `InfraNodus` / `Ahrefs`)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: закрывает новые направления 2026 года (Agentic Browsing / WebMCP, локальное SEO и карты для филиалов 1С-Битрикс, граф контентных пробелов и защита от каннибализации умного фильтра), удерживая `antigravity-bitrix-seo-geo` на уровне мировых лидеров (`claude-seo`).
+- **Чеклист приёмки (DoD)**:
+  - [ ] Добавлен скилл **`bitrix-seo-agentic`** (из `claude-seo/seo-agentic`): аудит готовности сайта 1С-Битрикс к AI-агентам (Lighthouse Agentic Browsing, WebMCP, структурированные формы/действия, `/llms.txt` + `/llms-full.txt`).
+  - [ ] Добавлен скилл **`bitrix-seo-local`** (из `claude-seo/seo-local` + `get-ryze.ai/seo-local`): аудит локального SEO, филиалов/складов Bitrix, NAP-консистентности, Яндекс.Бизнес / 2ГИС / Google Business Profile и триаж отзывов (строго с confirm-gate на запись).
+  - [ ] Добавлен скилл **`bitrix-seo-content-gaps`** (из `claude-seo/seo-cluster`, `seo-sxo`, `seo-programmatic`, `InfraNodus`, `Ahrefs`): граф пробелов спроса vs предложения, проверка каннибализации разделов/фильтров, programmatic SEO посадочных умного фильтра, рецепты подключения живых MCP (`Semrush` / `Ahrefs` / `Bing Webmaster`).
+  - [ ] В live-скрипты `antigravity-bitrix-seo-geo/scripts/*.mjs` добавлен **SSRF & Egress Guard** (по образцу `claude-seo v2.6.2`: блокировка private/loopback/cloud metadata адресов и санитизация паролей в ошибках прокси).
+  - [ ] Пройдены `node --check`, проверка 0 коллизий скиллов и smoke-тесты CLI-скриптов.
+
+### `PLUGIN-012` — Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` Anti-AI-Slop + Visual Finish Gate для шаблонов 1С-Битрикс)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.5 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: выделяет дизайн и фронтенд-качество в независимый 5-й плагин экосистемы, устраняя шаблонный «AI-слоп» в шаблонах `/local/templates/*/` и автоматически блокируя сдачу вёрстки с визуальными дефектами на `1440px` и `390px`.
+- **Чеклист приёмки (DoD)**:
+  - [ ] Создан плагин `antigravity-bitrix-design` (`plugin.json`, `rules/AGENTS.md`, `assets/logo.svg`, `install.ps1`/`.sh`) без внешних npm-зависимостей и без коллизий с существующими 4 плагинами.
+  - [ ] Реализованы скиллы **`bitrix-design-taste`** (Brief Inference + детерминированный подбор арт-дирекшна, типографики и палитры под архетипы 1С-Битрикс: автозапчасти/B2B, ИМ, услуги, CRM-кабинет; строго `Asset::getInstance()`, без поломки SEO/Schema) и **`bitrix-visual-gate`** (адаптация `taste-skill/gate.mjs`).
+  - [ ] Создан субагент **`bitrix-design-director`** и скрипт/протокол Fail-Closed **Visual Finish Gate** (`1440px` и `390px`: проверка наложений, горизонтального скролла, контрастности и заглушек; вердикт `GATE: PASS / FAIL / OPEN`, макс. 3 итерации).
+  - [ ] 5-й плагин интегрирован в `install-ecosystem.ps1`/`.sh`, `bitrix-bootstrap.mjs`, `bitrix-dashboard-data.mjs`, `bitrix-dashboard-render.mjs`, `extension.js` и `.github/workflows/ci.yml`.
+
+---
+
+## Спринт 6 — Оркестрация нового поколения и Память v2.0 (`Q2`, `Est: 8.0 ч`)
+
+### `PLUGIN-013` — Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `PrefectHQ/marvin`)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `4.5 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: устраняет деградацию качества на больших задачах — разбивает эпики на атомарные шаги («beads»), прогоняет каждый через замкнутый цикл автопроверки и фикса (`Ralph-loop`) в изолированном Git worktree и переводит обмен между агентами на строгие JSON-контракты (`Marvin` pattern).
+- **Чеклист приёмки (DoD)**:
+  - [ ] В `bitrix-orchestrator` добавлен протокол декомпозиции `L/XL` задач в атомарные **Beads** (15–45 мин) + **Ralph-Loop** (реализация → `php -l` / `node --check` / QA → автофикс, до 3 итераций) с обязательной изоляцией в Git worktree / feature-ветке и human-gated merge.
+  - [ ] Введены единые JSON-схемы структурированного вывода (**Structured Contracts**, в духе `Marvin`) для всех ревью-субагентов (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`, `bitrix-schema-validator`) и для извлечения структурированных характеристик товаров 1С-Битрикс.
+  - [ ] В `bitrix-dashboard-render.mjs` добавлено отображение активного worktree/ветки и статуса последних прогонов конвейера.
+
+### `PLUGIN-014` — Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `affaan-m/ECC`)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `3.5 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: сокращает расход токенов на старте сессии, делает обновления шаблонов памяти безопасными (без перезаписи заметок оператора) и автоматизирует сохранение контекста через хуки IDE.
+- **Чеклист приёмки (DoD)**:
+  - [ ] Введён `docs/memory/manifest.json` (по образцу `obsidian-mind/vault-manifest.json`), чётко разделяющий инфраструктурные файлы шаблона и пользовательский контент проекта.
+  - [ ] Создан zero-npm CLI-поисковик по памяти `bitrix-memory-search.mjs` (поиск по `docs/memory/*`, `docs/daily/*`, ADR + генерация компактного «утреннего брифа старта сессии»).
+  - [ ] Изучен и адаптирован формат `hooks.json` из `affaan-m/ECC/.antigravity-plugin/` (pre-compact сохранение состояния, post-edit `php -l` / `node --check`, защита от дрейфа контекста).
+  - [ ] Пройдены smoke-тесты `bitrix-memory-search.mjs` и безопасного обновления памяти в `bitrix-bootstrap.mjs`.
+
+---
+
+## Спринт 7 — Маркетинг v2.0 и Безопасный автодетект стека (`Q2`, `Est: 6.0 ч`)
+
+### `PLUGIN-015` — Расширение `antigravity-bitrix-marketing` v2.0 (практики `irinabuht12-oss/marketing-skills` под 1С-Битрикс)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `3.0 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: переводит маркетинг-плагин с базового копирайтинга на измеримый e-commerce рост (39-точечный аудит посадочных, A/B-тесты, диагностика CPA/ROAS и AI Visibility).
+- **Чеклист приёмки (DoD)**:
+  - [ ] В `antigravity-bitrix-marketing` добавлен скилл **`bitrix-landing-audit`** (39-точечный аудит посадочной/карточки товара + проверка пути конверсии на 1С-Битрикс).
+  - [ ] Добавлен скилл **`bitrix-paid-ab-analytics`** (постановка и разбор A/B-тестов, диагностика CPA/ROAS и потерь рекламного бюджета Яндекс.Директ / Google Ads, отчёты для владельца без жаргона).
+  - [ ] Усилена связка `bitrix-growth-strategist` с `bitrix-seo-content-gaps` по мониторингу AI-видимости бренда (Brand Answer & Citation Gap).
+  - [ ] Пройдены CI-проверки frontmatter и 0 коллизий.
+
+### `PLUGIN-016` — Автодетект стека 1С-Битрикс, `plugins-lock.json` (SHA-256), `--dry-run` и CI Prompt-Injection Scanner (`midudev/autoskills`)
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `3.0 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: проект сам определяет свой состав модулей 1С-Битрикс и подключает только нужные плагины (экономия контекста), фиксирует целостность версий через SHA-256 и защищает экосистему от prompt-injection при приёме PR от сообщества.
+- **Чеклист приёмки (DoD)**:
+  - [ ] `bitrix-bootstrap.mjs` автоматически определяет стек проекта (`catalog/sale`, `crm`, мультисайт, 1С-обмен, шаблоны) и рекомендует/включает оптимальный набор плагинов + поддерживает `--dry-run`.
+  - [ ] Генерируется `.agents/plugins-lock.json` с SHA-256 хешами установленных версий плагинов и проверкой целостности в `bitrix-dashboard-data.mjs`.
+  - [ ] В `.github/workflows/ci.yml` добавлен детерминированный **Skill Security & Prompt-Injection Scanner** для всех `SKILL.md` / `agents/*.md` (критично перед открытием `PLUGIN-001` для внешних PR).
+  - [ ] Пройдены позитивные и негативные тесты сканера безопасности и `--dry-run` бутстрапа.
