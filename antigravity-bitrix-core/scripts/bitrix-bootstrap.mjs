@@ -448,10 +448,38 @@ const cmsChecklistJsonContent = JSON.stringify(
   2
 ) + "\n";
 
+const manifestJsonContent = JSON.stringify(
+  {
+    schemaVersion: "1.0",
+    templateVersion: installedVersions["antigravity-bitrix-core"] || "2.7.0",
+    projectName,
+    detectedStage,
+    updatedAt: `${yyyy}-${mm}-${dd}`,
+    infrastructureFiles: [".agents/plugins.json", "docs/memory/manifest.json"],
+    userOwnedFiles: [
+      "AGENTS.md",
+      "docs/memory/README.md",
+      "docs/memory/codemap.md",
+      "docs/memory/decisions.md",
+      "docs/memory/status.md",
+      "docs/memory/velocity.json",
+      "docs/memory/cms-checklist.json",
+      "docs/backlog.md",
+      "docs/daily/*.md",
+      ".agents/permissions.json",
+      ".agents/learned-skills/*.md",
+    ],
+    notes: "Разделяет инфраструктурные файлы шаблона (безопасны для --update-config) и пользовательскую память проекта (никогда не перезаписывается без --force).",
+  },
+  null,
+  2
+) + "\n";
+
 writeTargetFile(".agents/plugins.json", pluginsJsonContent, updateConfig);
 writeTargetFile(".agents/permissions.json", permissionsJsonContent);
 writeTargetFile(".gitignore", gitignoreContent);
 writeTargetFile("AGENTS.md", renderTemplate("AGENTS.project.md"));
+writeTargetFile("docs/memory/manifest.json", manifestJsonContent, updateConfig);
 writeTargetFile("docs/memory/README.md", renderTemplate("memory-README.md"));
 writeTargetFile("docs/memory/codemap.md", renderTemplate("memory-codemap.md"));
 writeTargetFile("docs/memory/decisions.md", renderTemplate("memory-decisions.md"));

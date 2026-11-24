@@ -8,7 +8,7 @@ mkdir -p "$(dirname "${TARGET_DIR}")"
 rm -rf "${TARGET_DIR}"
 mkdir -p "${TARGET_DIR}"
 
-for item in plugin.json README.md LICENSE assets rules skills agents scripts templates; do
+for item in plugin.json README.md LICENSE assets rules skills agents scripts templates hooks; do
   if [ -e "${SOURCE_DIR}/${item}" ]; then
     cp -R "${SOURCE_DIR}/${item}" "${TARGET_DIR}/"
   fi

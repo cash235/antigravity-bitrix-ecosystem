@@ -14,7 +14,7 @@ if (Test-Path $TargetDir) {
 
 New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
 
-$ItemsToCopy = @("plugin.json", "README.md", "LICENSE", "assets", "rules", "skills", "agents", "scripts", "templates")
+$ItemsToCopy = @("plugin.json", "README.md", "LICENSE", "assets", "rules", "skills", "agents", "scripts", "templates", "hooks")
 foreach ($Item in $ItemsToCopy) {
     $SrcPath = Join-Path $SourceDir $Item
     if (Test-Path $SrcPath) {

@@ -27,6 +27,7 @@ Return:
 - **Status**: `PASS` | `NEEDS_CHANGES` | `BLOCKED`
 - **Checklist Verification**: Confirm which Acceptance Checklist items are proven vs missing.
 - **Findings** grouped by `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` with exact `file:line` references and concrete D7 fixes.
+- **Structured Verdict Contract (`schemaVersion: "1.0"`)**: End with a fenced `json` object `{ schemaVersion: "1.0", agent: "bitrix-architect-reviewer", taskId, verdict, checklist: { verified, total }, findings: [{ severity, code, file, line, message, fix }], scopeTriage: [] }`.
 
 ## Cock-up Prevention Gate (Mandatory — Inherited by Nested Subagents)
 - Before reviewing or proposing refactors, verify you have the task goal, business value, and Acceptance Checklist; if missing or contradictory, report `BLOCKED` and request clarification instead of guessing.

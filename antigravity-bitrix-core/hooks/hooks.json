@@ -1,0 +1,40 @@
+{
+  "bitrix-core-guardrails": {
+    "PreToolUse": [
+      {
+        "matcher": "write_file|edit_file|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.gemini/config/plugins/antigravity-bitrix-core/scripts/bitrix-hook-runner.mjs\" --hook core-isolation",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "write_file|edit_file|write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.gemini/config/plugins/antigravity-bitrix-core/scripts/bitrix-hook-runner.mjs\" --hook post-edit-lint",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.gemini/config/plugins/antigravity-bitrix-core/scripts/bitrix-hook-runner.mjs\" --hook pre-compact",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

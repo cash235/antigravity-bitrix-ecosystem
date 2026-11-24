@@ -655,6 +655,7 @@ const gitInfo = {
   modifiedFiles: [],
   untrackedFiles: [],
   checkpoints: [],
+  worktrees: [],
   recentCommits: [],
 };
 
@@ -672,6 +673,28 @@ if (isGitRepo) {
 
   const tagsRaw = runGit(["tag", "-l", "checkpoint/*"]) || "";
   gitInfo.checkpoints = tagsRaw.split(/\r?\n/).filter(Boolean).slice(-5);
+
+  const wtRaw = runGit(["worktree", "list", "--porcelain"]) || "";
+  if (wtRaw) {
+    let curWt = null;
+    for (const ln of wtRaw.split(/\r?\n/)) {
+      if (ln.startsWith("worktree ")) {
+        if (curWt) gitInfo.worktrees.push(curWt);
+        const wtPath = ln.slice(9).trim();
+        curWt = {
+          name: path.basename(wtPath),
+          branch: "detached",
+          head: "",
+          isCurrent: path.resolve(wtPath).toLowerCase() === path.resolve(rootDir).toLowerCase(),
+        };
+      } else if (curWt && ln.startsWith("HEAD ")) {
+        curWt.head = ln.slice(5).trim().slice(0, 7);
+      } else if (curWt && ln.startsWith("branch ")) {
+        curWt.branch = ln.slice(7).trim().replace(/^refs\/heads\//, "");
+      }
+    }
+    if (curWt) gitInfo.worktrees.push(curWt);
+  }
 
   const logRaw = runGit(["log", "-n", "8", "--pretty=format:%h|%ad|%an|%s", "--date=short"]) || "";
   for (const row of logRaw.split(/\r?\n/).filter(Boolean)) {
@@ -983,6 +1006,19 @@ const cmsChecklist = buildCmsChecklist(rootDir, { qaPreflight });
 // 6.10. Live Anonymized Learned Skills & GitHub PR Center (PLUGIN-001)
 const learnedSkills = listLearnedSkills(rootDir);
 
+// 6.11. Beads / Ralph-Loop Pipeline Telemetry (PLUGIN-013)
+const pipelineRunsPath = path.join(rootDir, "docs", "memory", "pipeline-runs.json");
+let pipelineRuns = [];
+if (fs.existsSync(pipelineRunsPath)) {
+  try {
+    const parsedRuns = JSON.parse(readSafe(pipelineRunsPath, 20000).replace(/^\uFEFF/, ""));
+    if (Array.isArray(parsedRuns)) pipelineRuns = parsedRuns.slice(-6).reverse();
+    else if (Array.isArray(parsedRuns.runs)) pipelineRuns = parsedRuns.runs.slice(-6).reverse();
+  } catch {
+    pipelineRuns = [];
+  }
+}
+
 // 7. Automated Heuristic PM & Orchestrator Signals
 const pmSignals = [];
 if (qaPreflight && Array.isArray(qaPreflight.critical) && qaPreflight.critical.length > 0) {
@@ -1108,6 +1144,7 @@ const payload = {
   changelog,
   cmsChecklist,
   learnedSkills,
+  pipelineRuns,
   structure: {
     hasLocalDir: fs.existsSync(localDir),
     hasBitrixDir: fs.existsSync(path.join(rootDir, "bitrix")),

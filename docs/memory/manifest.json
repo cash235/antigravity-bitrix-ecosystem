@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0",
+  "templateVersion": "2.7.0",
+  "projectType": "antigravity-bitrix-ecosystem",
+  "updatedAt": "2026-11-24",
+  "infrastructureFiles": [
+    ".agents/plugins.json",
+    "docs/memory/manifest.json"
+  ],
+  "userOwnedFiles": [
+    "AGENTS.md",
+    "BACKLOG_ECOSYSTEM.md",
+    "docs/memory/README.md",
+    "docs/memory/codemap.md",
+    "docs/memory/decisions.md",
+    "docs/memory/status.md",
+    "docs/memory/velocity.json",
+    "docs/memory/cms-checklist.json",
+    "docs/daily/*.md",
+    ".agents/permissions.json",
+    ".agents/learned-skills/*.md"
+  ],
+  "notes": "Граница между инфраструктурными файлами шаблона и пользовательской памятью проекта (obsidian-mind pattern). Файлы в userOwnedFiles никогда не перезаписываются без явного --force."
+}

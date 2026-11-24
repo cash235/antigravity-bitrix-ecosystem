@@ -135,3 +135,57 @@ If a needed satellite plugin is not installed/enabled, flag it clearly to the op
    - **Clarity** (structured, owner-friendly, exact file links)
    - **Actionability** (ready-to-use deploy list + UAT + next step)
    - **Conciseness** (no fluff or redundant prose)
+
+---
+
+## 9. Beads + Ralph-Loop + Git Worktree Isolation (`LoopTroop` Pattern for `L/XL` Tasks)
+
+Never run large `L`/`XL` tasks inside a single sprawling edit pass. Break them into three isolated stages:
+
+1. **Stage 1 — Plan → Atomic Beads (`15–45 min` each)**:
+   - Decompose the approved task into numbered **Beads** (`B1`, `B2`, ...), each touching a narrow slice (1 service/endpoint/template) with its own `AC` subset.
+2. **Stage 2 — Ralph-Loop Execution (Max 3 Fix Iterations per Bead)**:
+   - Execute inside an isolated **Git Worktree** (`git worktree add ../<repo>-<bead> -b feat/<task-id>`) or an isolated subagent workspace (`workspace: "share"` / `"branch"`).
+   - Loop per Bead: `Implement → Deterministic Check (php -l / node --check / bitrix-qa-preflight / bitrix-design-gate / VM test) → Auto-Fix`.
+   - Cap auto-fix retries at **3 iterations**. If iteration 3 still fails, stop Fail-Closed and escalate with root-cause diagnostics (never silently degrade tests).
+   - Optionally append run telemetry to `docs/memory/pipeline-runs.json` (`{ id, bead, branch, iterations, verdict, timestamp }`) so Command Center Dashboard displays the latest pipeline state.
+3. **Stage 3 — Final Review & Human-Gated Merge**:
+   - Run independent reviewer subagents (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`, `bitrix-design-director`).
+   - Merge into `main` (and push/deploy) ONLY after 100% Acceptance Checklist passes and explicit operator approval (respecting `.agents/permissions.json`).
+
+---
+
+## 10. Unified Structured Output Contracts (`Marvin` Pattern)
+
+All reviewer subagents MUST include a compact machine-readable JSON verdict block alongside concise prose so orchestrators and scripts can aggregate results deterministically:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "agent": "bitrix-architect-reviewer|bitrix-qa-verifier|bitrix-seo-auditor|bitrix-schema-validator|bitrix-design-director",
+  "taskId": "TASK-ID",
+  "verdict": "PASS|SHIP|SHIP_WITH_FIXES|NEEDS_CHANGES|BLOCK|INCOMPLETE|GATE_PASS|GATE_FAIL|GATE_OPEN",
+  "checklist": { "verified": 0, "total": 0 },
+  "findings": [
+    { "severity": "CRITICAL|HIGH|MEDIUM|LOW", "code": "RULE_CODE", "file": "path", "line": 1, "message": "fact", "fix": "action" }
+  ],
+  "scopeTriage": [
+    { "bucket": "in_place|current_checklist|new_backlog_task", "title": "discovered nuance" }
+  ]
+}
+```
+
+For **1C-Bitrix Catalog / Price-List Entity Extraction** (converting unstructured vendor sheets or descriptions into strict iblock properties), enforce the typed catalog contract:
+```json
+{
+  "sku": "string",
+  "oem": "string|null",
+  "brand": "string",
+  "name": "string",
+  "price": 0.0,
+  "currency": "RUB|BYN|USD|EUR",
+  "stock": 0,
+  "specs": { "key": "value" },
+  "confidence": 0.95
+}
+```

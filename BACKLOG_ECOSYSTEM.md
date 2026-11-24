@@ -2,7 +2,7 @@
 
 > **Конечная цель (North Star)**: создать эталонную, самоконтролирующуюся экосистему 1С-Битрикс D7 для Antigravity IDE, где каждый проект ведётся по измеримым спринтам с понятными дедлайнами, жёсткой проверкой смысла действий на всех уровнях агентов (`Cock-up Prevention`), сквозным контролем чеклистов приёмки и автоматическим накоплением обезличенного боевого опыта.
 >
-> **Текущий фокус**: **Спринты 1–5 ЗАВЕРШЕНЫ (`12/16`, `75%`, экосистема выросла до 5 плагинов!)** → следующий **Спринт 6 — «Оркестрация нового поколения (`Beads + Ralph-Loop + Worktree + Typed Contracts`) и Память v2.0»** (`PLUGIN-013`, `PLUGIN-014`).
+> **Текущий фокус**: **Спринты 1–6 ЗАВЕРШЕНЫ (`14/16`, `88%`)** → финальный **Спринт 7 — «Маркетинг v2.0 и Безопасный автодетект стека»** (`PLUGIN-015`, `PLUGIN-016`).
 
 ---
 
@@ -48,8 +48,8 @@
 | **Спринт 4** | `PLUGIN-001` | Live Anonymized Skill Collector & 1-Click GitHub PR Center | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 5** | `PLUGIN-011` | Апгрейд `antigravity-bitrix-seo-geo` v3.0 (`claude-seo v2.6` + `seo-local` + `InfraNodus`/`Ahrefs`) | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 5** | `PLUGIN-012` | Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` + `Leonxlnx/taste-skill` + `emilkowalski/skills` + Visual Finish Gate `1440/390px`) | `Q2` | `L` | `5.5 ч` | `0.5 ч` | Выполнено (`100%` DoD) |
-| **Спринт 6** | `PLUGIN-013` | Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `Marvin`) | `Q2` | `L` | `4.5 ч` | `—` | Запланировано |
-| **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `—` | Запланировано |
+| **Спринт 6** | `PLUGIN-013` | Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `Marvin`) | `Q2` | `L` | `4.5 ч` | `0.3 ч` | Выполнено (`100%` DoD) |
+| **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 7** | `PLUGIN-015` | Расширение `antigravity-bitrix-marketing` v2.0 (39-pt LP audit, A/B, CPA/ROAS, AI Visibility по `marketing-skills`) | `Q2` | `M` | `3.0 ч` | `—` | Запланировано |
 | **Спринт 7** | `PLUGIN-016` | Автодетект стека 1С-Битрикс, `plugins-lock.json` (SHA-256), `--dry-run` и CI Prompt-Injection Scanner (`autoskills`) | `Q2` | `M` | `3.0 ч` | `—` | Запланировано |
 
@@ -201,21 +201,21 @@
 ## Спринт 6 — Оркестрация нового поколения и Память v2.0 (`Q2`, `Est: 8.0 ч`)
 
 ### `PLUGIN-013` — Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `PrefectHQ/marvin`)
-- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `4.5 ч` · **Факт (`Actual`)**: `—`
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `4.5 ч` · **Факт (`Actual`)**: `0.3 ч`
 - **Бизнес-ценность**: устраняет деградацию качества на больших задачах — разбивает эпики на атомарные шаги («beads»), прогоняет каждый через замкнутый цикл автопроверки и фикса (`Ralph-loop`) в изолированном Git worktree и переводит обмен между агентами на строгие JSON-контракты (`Marvin` pattern).
 - **Чеклист приёмки (DoD)**:
-  - [ ] В `bitrix-orchestrator` добавлен протокол декомпозиции `L/XL` задач в атомарные **Beads** (15–45 мин) + **Ralph-Loop** (реализация → `php -l` / `node --check` / QA → автофикс, до 3 итераций) с обязательной изоляцией в Git worktree / feature-ветке и human-gated merge.
-  - [ ] Введены единые JSON-схемы структурированного вывода (**Structured Contracts**, в духе `Marvin`) для всех ревью-субагентов (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`, `bitrix-schema-validator`) и для извлечения структурированных характеристик товаров 1С-Битрикс.
-  - [ ] В `bitrix-dashboard-render.mjs` добавлено отображение активного worktree/ветки и статуса последних прогонов конвейера.
+  - [x] В `bitrix-orchestrator` добавлен протокол декомпозиции `L/XL` задач в атомарные **Beads** (15–45 мин) + **Ralph-Loop** (реализация → `php -l` / `node --check` / QA → автофикс, до 3 итераций) с обязательной изоляцией в Git worktree / feature-ветке и human-gated merge.
+  - [x] Введены единые JSON-схемы структурированного вывода (**Structured Contracts**, в духе `Marvin`) для всех ревью-субагентов (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`, `bitrix-schema-validator`) и для извлечения структурированных характеристик товаров 1С-Битрикс.
+  - [x] В `bitrix-dashboard-render.mjs` добавлено отображение активного worktree/ветки и статуса последних прогонов конвейера.
 
 ### `PLUGIN-014` — Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `affaan-m/ECC`)
-- **Шкалы**: `[Q2: Важно + Не срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `3.5 ч` · **Факт (`Actual`)**: `—`
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `3.5 ч` · **Факт (`Actual`)**: `0.4 ч`
 - **Бизнес-ценность**: сокращает расход токенов на старте сессии, делает обновления шаблонов памяти безопасными (без перезаписи заметок оператора) и автоматизирует сохранение контекста через хуки IDE.
 - **Чеклист приёмки (DoD)**:
-  - [ ] Введён `docs/memory/manifest.json` (по образцу `obsidian-mind/vault-manifest.json`), чётко разделяющий инфраструктурные файлы шаблона и пользовательский контент проекта.
-  - [ ] Создан zero-npm CLI-поисковик по памяти `bitrix-memory-search.mjs` (поиск по `docs/memory/*`, `docs/daily/*`, ADR + генерация компактного «утреннего брифа старта сессии»).
-  - [ ] Изучен и адаптирован формат `hooks.json` из `affaan-m/ECC/.antigravity-plugin/` (pre-compact сохранение состояния, post-edit `php -l` / `node --check`, защита от дрейфа контекста).
-  - [ ] Пройдены smoke-тесты `bitrix-memory-search.mjs` и безопасного обновления памяти в `bitrix-bootstrap.mjs`.
+  - [x] Введён `docs/memory/manifest.json` (по образцу `obsidian-mind/vault-manifest.json`), чётко разделяющий инфраструктурные файлы шаблона и пользовательский контент проекта.
+  - [x] Создан zero-npm CLI-поисковик по памяти `bitrix-memory-search.mjs` (поиск по `docs/memory/*`, `docs/daily/*`, ADR + генерация компактного «утреннего брифа старта сессии»).
+  - [x] Изучен и адаптирован формат `hooks.json` из `affaan-m/ECC/.antigravity-plugin/` (pre-compact сохранение состояния, post-edit `php -l` / `node --check`, защита от дрейфа контекста).
+  - [x] Пройдены smoke-тесты `bitrix-memory-search.mjs` и безопасного обновления памяти в `bitrix-bootstrap.mjs`.
 
 ---
 

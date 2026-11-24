@@ -2,6 +2,18 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.7.0] - 2026-11-24
+
+### Added (Sprint 6: Next-Gen Orchestration & Memory v2.0)
+- **`PLUGIN-013` — Beads + Ralph-Loop + Git Worktree Isolation + Typed Contracts**:
+  - Upgraded `bitrix-orchestrator` with atomic Bead decomposition (`15–45 min`), 3-iteration Fail-Closed Ralph-Loop, isolated Git worktree / human-gated merge protocol, and unified `Marvin`-style JSON contracts.
+  - Embedded unified **Structured Verdict Contract (`schemaVersion: "1.0"`)** across all 5 review subagents (`bitrix-architect-reviewer`, `bitrix-qa-verifier`, `bitrix-seo-auditor`, `bitrix-schema-validator`, `bitrix-design-director`).
+  - Added live **Git Worktrees** & **Ralph-Loop Pipeline Telemetry** block on the «Git и /local/» Dashboard tab.
+- **`PLUGIN-014` — Memory v2.0 (`manifest.json`, Local Memory Search & Antigravity Hooks)**:
+  - Introduced `docs/memory/manifest.json` separating template infrastructure files from user-owned memory (safe `--update-config` upgrades in `bitrix-bootstrap.mjs`).
+  - Added zero-npm `antigravity-bitrix-core/scripts/bitrix-memory-search.mjs` (`--brief` session startup digest + ranked full-text search across `docs/memory/`, `docs/daily/`, ADR).
+  - Added Antigravity lifecycle hooks (`antigravity-bitrix-core/hooks/hooks.json` + `scripts/bitrix-hook-runner.mjs`: `/bitrix/` core isolation PreToolUse guard, PostToolUse syntax check, PreCompact state snapshot).
+
 ## [v2.6.0] - 2026-11-24
 
 ### Added (Sprint 5: `antigravity-bitrix-seo-geo` v3.0.0 & New 5th Plugin `antigravity-bitrix-design` v1.0.0)

@@ -1,7 +1,7 @@
 {
   "name": "antigravity-bitrix-core",
   "displayName": "1C-Bitrix Core & Central Orchestrator",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Central 1C-Bitrix D7 Project Orchestrator & Engineering Foundation for Antigravity IDE: ICE prioritization, live quota-aware model router, deterministic Command Center Dashboard v2.1 renderer, one-command project bootstrapper, Greenfield/Brownfield onboarding, memory/ADR governance, and Fail-Closed code review.",
   "logo": "assets/logo.svg",
   "author": {

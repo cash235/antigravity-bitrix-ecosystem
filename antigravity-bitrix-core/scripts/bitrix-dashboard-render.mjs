@@ -340,6 +340,7 @@ const viewModel = {
     upstreamRepo: "cash235/antigravity-bitrix-ecosystem",
     skills: [],
   },
+  pipelineRuns: Array.isArray(snapshot.pipelineRuns) ? snapshot.pipelineRuns : [],
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -1703,6 +1704,49 @@ const clientScript = `
       treeBadge.textContent = "Незакоммичено: " + DATA.git.uncommittedCount;
     }
 
+    const wtBox = document.getElementById("gitWorktreesBox");
+    if (wtBox) {
+      const wts = Array.isArray(DATA.git.worktrees) ? DATA.git.worktrees : [];
+      const runs = Array.isArray(DATA.pipelineRuns) ? DATA.pipelineRuns : [];
+      const wtHtml =
+        wts.length > 0
+          ? wts
+              .map(function (w) {
+                return (
+                  '<span class="tag ' + (w.isCurrent ? "tag-strong" : "") + ' mono">' +
+                  '<span class="dot ' + (w.isCurrent ? "dot-ok" : "dot-muted") + '"></span>' +
+                  esc(w.branch) + " · " + esc(w.name) + (w.head ? " (" + esc(w.head) + ")" : "") +
+                  "</span>"
+                );
+              })
+              .join("")
+          : '<span class="text-xs muted">Основной worktree (' + esc(DATA.git.branch || "—") + ")</span>";
+
+      const runsHtml =
+        runs.length > 0
+          ? runs
+              .map(function (r) {
+                const ok = /pass|ship/i.test(String(r.verdict || ""));
+                return (
+                  '<span class="tag mono"><span class="dot ' + (ok ? "dot-ok" : "dot-warn") + '"></span>' +
+                  esc(r.bead || r.id || "run") + ": " + esc(r.verdict || "—") +
+                  (r.iterations ? " (" + esc(r.iterations) + " итер.)" : "") + "</span>"
+                );
+              })
+              .join("")
+          : '<span class="text-xs muted">Прогоны Ralph-Loop (docs/memory/pipeline-runs.json) пока не зафиксированы</span>';
+
+      wtBox.innerHTML =
+        '<div class="col" style="gap:4px;">' +
+        '<div class="text-xs muted" style="font-weight:600;">Git Worktrees (' + wts.length + ")</div>" +
+        '<div class="row">' + wtHtml + "</div>" +
+        "</div>" +
+        '<div class="col" style="gap:4px;">' +
+        '<div class="text-xs muted" style="font-weight:600;">Конвейер Beads / Ralph-Loop</div>' +
+        '<div class="row">' + runsHtml + "</div>" +
+        "</div>";
+    }
+
     const tl = document.getElementById("gitTimeline");
     const commits = DATA.git.recentCommits || [];
     if (commits.length === 0) {
@@ -2621,6 +2665,7 @@ const html = `<!DOCTYPE html>
             </div>
             <span id="gitTreeBadge" class="tag">—</span>
           </div>
+          <div id="gitWorktreesBox" class="subcard col" style="gap:7px;"></div>
           <div id="gitTimeline" class="col" style="gap:0;"></div>
         </div>
 
