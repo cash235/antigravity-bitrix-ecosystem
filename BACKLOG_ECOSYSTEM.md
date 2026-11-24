@@ -2,7 +2,7 @@
 
 > **Конечная цель (North Star)**: создать эталонную, самоконтролирующуюся экосистему 1С-Битрикс D7 для Antigravity IDE, где каждый проект ведётся по измеримым спринтам с понятными дедлайнами, жёсткой проверкой смысла действий на всех уровнях агентов (`Cock-up Prevention`), сквозным контролем чеклистов приёмки и автоматическим накоплением обезличенного боевого опыта.
 >
-> **Текущий фокус**: **Спринты 1 и 2 ЗАВЕРШЕНЫ (`PLUGIN-007`, `008`, `009`, `010`, `006`, `003`, `004`)** → следующий **Спринт 3 — «Мастер-Чеклист готовности всех модулей 1С-Битрикс»** (`PLUGIN-005`).
+> **Текущий фокус**: **Спринты 1, 2 и 3 ЗАВЕРШЕНЫ (`9/16`, `56%`)** → следующий **Спринт 4 — «Самообучающаяся экосистема и 1-Click GitHub PR»** (`PLUGIN-001`).
 
 ---
 
@@ -44,10 +44,10 @@
 | **Спринт 2** | `PLUGIN-003` | Автодеактивация выполненных одноразовых кнопок и инструкций | `Q2` | `S` | `1.0 ч` | `0.1 ч` | Выполнено (`100%` DoD) |
 | **Спринт 2** | `PLUGIN-004` | Пошаговый маршрут первичной настройки (Step-by-Step Setup Pipeline) | `Q2` | `M` | `2.0 ч` | `0.1 ч` | Выполнено (`100%` DoD) |
 | **Спринт 3** | `PLUGIN-017` | Автоматизация релизов (`CHANGELOG.md`, GitHub Releases, обзор реализованных фич в Дашборде) | `Q1` | `S` | `1.5 ч` | `0.2 ч` | Выполнено (`100%` DoD) |
-| **Спринт 3** | `PLUGIN-005` | 10-блочный Профильный Мастер-Чеклист готовности модулей 1С-Битрикс | `Q2` | `L` | `5.0 ч` | `—` | Следующая |
+| **Спринт 3** | `PLUGIN-005` | 10-блочный Профильный Мастер-Чеклист готовности модулей 1С-Битрикс | `Q2` | `L` | `5.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 4** | `PLUGIN-001` | Live Anonymized Skill Collector & 1-Click GitHub PR Center | `Q2` | `L` | `5.0 ч` | `—` | Запланировано |
 | **Спринт 5** | `PLUGIN-011` | Апгрейд `antigravity-bitrix-seo-geo` v3.0 (`claude-seo v2.6` + `seo-local` + `InfraNodus`/`Ahrefs`) | `Q2` | `L` | `5.0 ч` | `—` | Запланировано |
-| **Спринт 5** | `PLUGIN-012` | Новый 5-й плагин `antigravity-bitrix-design` (`taste-skill` Anti-AI-Slop + Visual Finish Gate `1440/390px`) | `Q2` | `L` | `5.5 ч` | `—` | Запланировано |
+| **Спринт 5** | `PLUGIN-012` | Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` + `Leonxlnx/taste-skill` + `emilkowalski/skills` + Visual Finish Gate `1440/390px`) | `Q2` | `L` | `5.5 ч` | `—` | Запланировано |
 | **Спринт 6** | `PLUGIN-013` | Конвейер «Beads + Ralph-Loop + Git Worktree + Typed Contracts» (`LoopTroop` + `Marvin`) | `Q2` | `L` | `4.5 ч` | `—` | Запланировано |
 | **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `—` | Запланировано |
 | **Спринт 7** | `PLUGIN-015` | Расширение `antigravity-bitrix-marketing` v2.0 (39-pt LP audit, A/B, CPA/ROAS, AI Visibility по `marketing-skills`) | `Q2` | `M` | `3.0 ч` | `—` | Запланировано |
@@ -141,10 +141,10 @@
   - [x] Пройдена проверка `node --check` и тестовый прогон `--dry-run`.
 
 ### `PLUGIN-005` — Профильный 10-блочный Мастер-Чеклист готовности CMS (включая Read-Only QA витрины)
-- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `—`
+- **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.0 ч` · **Факт (`Actual`)**: `0.4 ч`
 - **Бизнес-ценность**: даёт оператору единую интерактивную карту готовности всех модулей 1С-Битрикс (на базе «Монитора качества» [`dev.1c-bitrix.ru/support/faq/8366/`](https://dev.1c-bitrix.ru/support/faq/8366/) и курсов [`academy.1c-bitrix.ru/types/programming/`](https://academy.1c-bitrix.ru/types/programming/)), исключая забытые настройки перед релизом.
 - **Чеклист приёмки (DoD)**:
-  - [ ] Реализована генерация профильного 10-блочного чеклиста под архетип проекта (ИМ / Услуги / Корпоративный / CRM+Б24 / 1С):
+  - [x] Реализована генерация профильного 10-блочного чеклиста под архетип проекта (ИМ / Услуги / Корпоративный / CRM+Б24 / 1С):
     1. Окружение, БД и Ядро (PHP 8.x, MySQL 8.0 `utf8mb4`, Cron `BX_CRONTAB_SUPPORT`, `site_checker.php`)
     2. Главный модуль (`main`) и Сайт (`b_lang`, `b_lang_domain`, `b_site_template`, меню, свойства)
     3. Инфоблоки (`iblock`) и Свойства (`property_features_enabled`, `b_user_field`, фасетный индекс)
@@ -155,8 +155,8 @@
     8. `bitrix-production-audit` (изоляция `/local/`, отсутствие `test*.php`, секреты вне Git, `HttpClient`, 404 без Quirks Mode)
     9. Базовое SEO & GEO (`robots.txt`, `sitemap.xml`, `urlrewrite.php`, `b_iblock_iproperty`, Schema.org, `/llms.txt`)
     10. Полный Read-Only QA-проход витрины (`bitrix-browser-qa`, `375/768/1440px`: главная, фильтр, карточка, корзина, чекаут)
-  - [ ] Каждый пункт имеет статус (`Проверено / Требует настройки / Не применимо`), подсказку пути в админке/`b_option` и 1-клик промпт для автопроверки.
-  - [ ] Чеклист интегрирован в `bitrix-project-init` и отображается в Command Center Dashboard.
+  - [x] Каждый пункт имеет статус (`Проверено / Требует настройки / Не применимо`), подсказку пути в админке/`b_option` и 1-клик промпт для автопроверки.
+  - [x] Чеклист интегрирован в `bitrix-project-init` и отображается в Command Center Dashboard.
 
 ---
 
@@ -185,13 +185,15 @@
   - [ ] В live-скрипты `antigravity-bitrix-seo-geo/scripts/*.mjs` добавлен **SSRF & Egress Guard** (по образцу `claude-seo v2.6.2`: блокировка private/loopback/cloud metadata адресов и санитизация паролей в ошибках прокси).
   - [ ] Пройдены `node --check`, проверка 0 коллизий скиллов и smoke-тесты CLI-скриптов.
 
-### `PLUGIN-012` — Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` Anti-AI-Slop + Visual Finish Gate для шаблонов 1С-Битрикс)
+### `PLUGIN-012` — Новый 5-й плагин `antigravity-bitrix-design` (`tasteskill.dev` / `Leonxlnx/taste-skill` + `emilkowalski/skills` + Visual Finish Gate)
 - **Шкалы**: `[Q2: Важно + Не срочно]` · `[L: Крупная]` · **Оценка (`Est`)**: `5.5 ч` · **Факт (`Actual`)**: `—`
-- **Бизнес-ценность**: выделяет дизайн и фронтенд-качество в независимый 5-й плагин экосистемы, устраняя шаблонный «AI-слоп» в шаблонах `/local/templates/*/` и автоматически блокируя сдачу вёрстки с визуальными дефектами на `1440px` и `390px`.
+- **Бизнес-ценность**: выделяет дизайн, микро-анимации и фронтенд-качество в независимый 5-й плагин экосистемы, устраняя шаблонный «AI-слоп» в `/local/templates/*/`, поднимая визуальный вкус и тактильность UI до уровня лучших design-engineering практик (Vercel/Linear — `emilkowalski/skills`) и автоматически блокируя сдачу вёрстки с дефектами на `1440px` и `390px`.
+- **Источники для изучения и адаптации**: [`tasteskill.dev`](https://www.tasteskill.dev/), [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill), [`emilkowalski/skills`](https://github.com/emilkowalski/skills) (`emil-design-eng`, `learn-taste`, `ui-cheatsheet.md`, `performance-cheatsheet.md`, `animation-performance`, `review-animations`, `remove-animations`, `mobile-native`, `break-ui`, `gestures`).
 - **Чеклист приёмки (DoD)**:
   - [ ] Создан плагин `antigravity-bitrix-design` (`plugin.json`, `rules/AGENTS.md`, `assets/logo.svg`, `install.ps1`/`.sh`) без внешних npm-зависимостей и без коллизий с существующими 4 плагинами.
-  - [ ] Реализованы скиллы **`bitrix-design-taste`** (Brief Inference + детерминированный подбор арт-дирекшна, типографики и палитры под архетипы 1С-Битрикс: автозапчасти/B2B, ИМ, услуги, CRM-кабинет; строго `Asset::getInstance()`, без поломки SEO/Schema) и **`bitrix-visual-gate`** (адаптация `taste-skill/gate.mjs`).
-  - [ ] Создан субагент **`bitrix-design-director`** и скрипт/протокол Fail-Closed **Visual Finish Gate** (`1440px` и `390px`: проверка наложений, горизонтального скролла, контрастности и заглушек; вердикт `GATE: PASS / FAIL / OPEN`, макс. 3 итерации).
+  - [ ] Реализован скилл **`bitrix-design-taste`** (из `tasteskill.dev` / `Leonxlnx/taste-skill` + `emilkowalski/skills/learn-taste` & `ui-cheatsheet.md`): Brief Inference, детерминированный подбор арт-дирекшна/типографики/палитры под архетипы 1С-Битрикс (автозапчасти/B2B, ИМ, услуги, CRM-кабинет), точные бордеры/тени/контраст, строго `Asset::getInstance()`, без поломки SEO/Schema.
+  - [ ] Реализован скилл **`bitrix-motion-craft`** (из `emilkowalski/skills`: `animation-performance`, `review-animations`, `remove-animations`, `mobile-native`, `gestures`): правильные кривые `ease-out` / `spring`, GPU-безопасные свойства (без просадки INP/CLS), `prefers-reduced-motion`, аудит и удаление лишних/тормозящих анимаций.
+  - [ ] Создан субагент **`bitrix-design-director`** и скрипт/протокол Fail-Closed **Visual Finish Gate** (`bitrix-visual-gate`, адаптация `taste-skill/gate.mjs` + `emilkowalski/break-ui`): автопроверка на `1440px` и `390px` (наложения, горизонтальный скролл, контраст, заглушки; вердикт `GATE: PASS / FAIL / OPEN`, макс. 3 итерации).
   - [ ] 5-й плагин интегрирован в `install-ecosystem.ps1`/`.sh`, `bitrix-bootstrap.mjs`, `bitrix-dashboard-data.mjs`, `bitrix-dashboard-render.mjs`, `extension.js` и `.github/workflows/ci.yml`.
 
 ---

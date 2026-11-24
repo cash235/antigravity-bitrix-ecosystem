@@ -414,6 +414,43 @@ function activate(context) {
     if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "backlog");
   }
 
+  async function saveCmsChecklistToWorkspace(archetype, archetypeLabel, blocks) {
+    const rootDir = getWorkspaceRoot();
+    if (!rootDir) return;
+    const target = path.join(rootDir, "docs", "memory", "cms-checklist.json");
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = {
+      schemaVersion: "1.0",
+      archetype: archetype || "store",
+      archetypeLabel: archetypeLabel || archetype || "store",
+      updatedAt: today,
+      blocks: Array.isArray(blocks)
+        ? blocks.map((b) => ({
+            id: b.id,
+            number: b.number,
+            title: b.title,
+            module: b.module,
+            adminPath: b.adminPath,
+            items: Array.isArray(b.items)
+              ? b.items.map((it) => ({
+                  id: it.id,
+                  title: it.title,
+                  status: it.status || "needs_setup",
+                  note: it.note || "",
+                }))
+              : [],
+          }))
+        : [],
+    };
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, JSON.stringify(payload, null, 2) + "\n", "utf8");
+    vscode.window.showInformationMessage(
+      `Мастер-чеклист 1С-Битрикс сохранён в docs/memory/cms-checklist.json (профиль: ${payload.archetype}).`
+    );
+    await refreshSnapshot();
+    if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "knowledge");
+  }
+
   async function openWorkspaceFile(relPath) {
     const rootDir = getWorkspaceRoot();
     if (!rootDir || !relPath) return;
@@ -460,6 +497,8 @@ function activate(context) {
         await savePermissionsToWorkspace(msg.profile, msg.rules);
       } else if (msg.type === "saveVelocity") {
         await saveVelocityToWorkspace(msg.hoursPerDay, msg.daysPerWeek);
+      } else if (msg.type === "saveCmsChecklist") {
+        await saveCmsChecklistToWorkspace(msg.archetype, msg.archetypeLabel, msg.blocks);
       } else if (msg.type === "openFile") {
         await openWorkspaceFile(msg.path);
       }

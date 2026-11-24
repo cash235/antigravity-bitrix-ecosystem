@@ -322,6 +322,13 @@ const viewModel = {
     isProjectInitialized: false,
   },
   changelog: snapshot.changelog || { exists: false, path: "CHANGELOG.md", releases: [] },
+  cmsChecklist: snapshot.cmsChecklist || {
+    configured: false,
+    archetype: "store",
+    archetypeLabel: "Интернет-магазин (E-commerce)",
+    summary: { blocksCount: 0, totalItems: 0, applicableItems: 0, verifiedItems: 0, needsSetupItems: 0, notApplicableItems: 0, completionPct: 0 },
+    blocks: [],
+  },
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -820,6 +827,7 @@ const clientScript = `
     backlogQuadrant: "all",
     backlogSize: "all",
     backlogSort: "quadrant",
+    cmsFilter: "all",
   };
 
   function quadrantRank(q) {
@@ -876,7 +884,10 @@ const clientScript = `
       DATA.contextBudget.status === "needs_trim" ? "нужна чистка" : "в норме";
 
     const tabKnowledgeBtn = document.querySelector('[data-tab="knowledge"]');
-    if (tabKnowledgeBtn) tabKnowledgeBtn.textContent = "Знания (" + DATA.knowledge.length + ")";
+    if (tabKnowledgeBtn) {
+      const cmsPct = DATA.cmsChecklist && DATA.cmsChecklist.summary ? DATA.cmsChecklist.summary.completionPct : null;
+      tabKnowledgeBtn.textContent = cmsPct != null ? "Знания и CMS (" + cmsPct + "%)" : "Знания (" + DATA.knowledge.length + ")";
+    }
     const tabBacklogBtn = document.querySelector('[data-tab="backlog"]');
     if (tabBacklogBtn) tabBacklogBtn.textContent = "Бэклог (" + DATA.backlog.openCount + ")";
   }
@@ -1312,6 +1323,180 @@ const clientScript = `
       .join("");
   }
 
+  const CMS_ARCHETYPE_LABELS = {
+    store: "Интернет-магазин (E-commerce)",
+    crm_b24: "Интернет-магазин + Битрикс24 Коробка (CRM)",
+    services: "Сайт услуг / каталог без онлайн-оплаты",
+    corporate: "Корпоративный сайт",
+    minimal: "Минимальный (Базовое ядро)",
+  };
+  const CMS_ECOM_BLOCKS = { B04: true, B05: true, B06: true };
+  let draftCmsChecklist = JSON.parse(JSON.stringify(DATA.cmsChecklist || { archetype: "store", blocks: [] }));
+  const openCmsBlocks = new Set();
+  let cmsOpenInitialized = false;
+
+  function recalcDraftCmsSummary() {
+    let totalItems = 0, applicableItems = 0, verifiedItems = 0, needsSetupItems = 0, notApplicableItems = 0;
+    (draftCmsChecklist.blocks || []).forEach(function (b) {
+      let bVer = 0, bNeed = 0, bNa = 0;
+      (b.items || []).forEach(function (it) {
+        totalItems++;
+        if (it.status === "not_applicable") { bNa++; notApplicableItems++; }
+        else if (it.status === "verified") { bVer++; verifiedItems++; applicableItems++; }
+        else { bNeed++; needsSetupItems++; applicableItems++; }
+      });
+      const bApp = (b.items || []).length - bNa;
+      b.stats = {
+        total: (b.items || []).length,
+        applicable: bApp,
+        verified: bVer,
+        needsSetup: bNeed,
+        notApplicable: bNa,
+        completionPct: bApp > 0 ? Math.round((bVer / bApp) * 100) : 100,
+      };
+    });
+    draftCmsChecklist.summary = {
+      blocksCount: (draftCmsChecklist.blocks || []).length,
+      totalItems: totalItems,
+      applicableItems: applicableItems,
+      verifiedItems: verifiedItems,
+      needsSetupItems: needsSetupItems,
+      notApplicableItems: notApplicableItems,
+      completionPct: applicableItems > 0 ? Math.round((verifiedItems / applicableItems) * 100) : 100,
+    };
+  }
+
+  function renderCmsChecklist() {
+    const container = document.getElementById("cmsChecklistBlocks");
+    if (!container) return;
+    if (!draftCmsChecklist || !Array.isArray(draftCmsChecklist.blocks) || draftCmsChecklist.blocks.length === 0) {
+      container.innerHTML = '<div class="subcard text-xs muted">Чеклист модулей 1С-Битрикс недоступен.</div>';
+      return;
+    }
+    recalcDraftCmsSummary();
+    const s = draftCmsChecklist.summary;
+
+    const archSel = document.getElementById("cmsArchetypeSelect");
+    if (archSel) archSel.value = draftCmsChecklist.archetype || "store";
+
+    const badge = document.getElementById("cmsChecklistBadge");
+    if (badge) {
+      badge.textContent = draftCmsChecklist.configured
+        ? "сохранено · " + s.completionPct + "%"
+        : "черновик · " + s.completionPct + "%";
+      badge.className = "tag mono " + (s.completionPct >= 80 ? "tag-success" : "tag-strong");
+    }
+
+    const progLabel = document.getElementById("cmsProgressLabel");
+    if (progLabel) {
+      progLabel.textContent =
+        "Проверено " + s.verifiedItems + "/" + s.applicableItems + " (" + s.completionPct + "%) · Требует настройки: " +
+        s.needsSetupItems + " · Н/П: " + s.notApplicableItems;
+    }
+    const progBar = document.getElementById("cmsProgressBar");
+    if (progBar) {
+      progBar.style.width = s.completionPct + "%";
+      progBar.style.background = s.completionPct >= 80 ? "var(--success)" : "var(--primary)";
+    }
+
+    const filterBox = document.getElementById("cmsFilterBar");
+    if (filterBox) {
+      const filters = [
+        { k: "all", l: "Все (" + s.totalItems + ")" },
+        { k: "needs_setup", l: "Требует настройки (" + s.needsSetupItems + ")" },
+        { k: "verified", l: "Проверено (" + s.verifiedItems + ")" },
+        { k: "not_applicable", l: "Не применимо (" + s.notApplicableItems + ")" },
+      ];
+      filterBox.innerHTML = filters
+        .map(function (f) {
+          return (
+            '<button type="button" class="filter-btn" data-cms-filter="' + esc(f.k) + '" aria-pressed="' +
+            (state.cmsFilter === f.k ? "true" : "false") + '">' + esc(f.l) + "</button>"
+          );
+        })
+        .join("");
+    }
+
+    const saveBtn = document.getElementById("saveCmsChecklistBtn");
+    if (saveBtn) {
+      saveBtn.textContent = vscode ? "Сохранить чеклист" : "Скопировать JSON чеклиста";
+    }
+
+    const htmlBlocks = draftCmsChecklist.blocks
+      .map(function (b) {
+        const visibleItems = (b.items || []).filter(function (it) {
+          return state.cmsFilter === "all" || it.status === state.cmsFilter;
+        });
+        if (visibleItems.length === 0) return "";
+        const st = b.stats || { verified: 0, applicable: 0, completionPct: 0, needsSetup: 0 };
+        const dot = st.applicable === 0 ? "dot-muted" : st.needsSetup === 0 ? "dot-ok" : "dot-warn";
+        if (!cmsOpenInitialized && st.needsSetup > 0) {
+          openCmsBlocks.add(b.id);
+          cmsOpenInitialized = true;
+        }
+        const isOpen = openCmsBlocks.has(b.id);
+
+        const pKey = "cms:" + b.id;
+        promptRegistry.set(pKey, {
+          text: b.blockPrompt || ("Проверь блок " + b.number + " (" + b.title + ") для проекта 1С-Битрикс."),
+          label: "Промпт проверки блока " + b.number + " скопирован",
+        });
+
+        const itemsHtml = visibleItems
+          .map(function (it) {
+            const itDot = it.status === "verified" ? "dot-ok" : it.status === "not_applicable" ? "dot-muted" : "dot-warn";
+            return (
+              '<div class="subcard col" style="gap:5px;">' +
+              '<div class="row-between" style="align-items:flex-start;">' +
+              '<div class="col" style="gap:2px;flex:1;min-width:220px;">' +
+              '<div class="row" style="gap:6px;"><span class="dot ' + itDot + '"></span><strong class="text-xs">' + esc(it.title) + "</strong></div>" +
+              '<div class="text-xs muted">' + esc(it.hint || "") + "</div>" +
+              '<div class="row" style="gap:5px;margin-top:2px;">' +
+              '<span class="tag mono">' + esc(it.adminPath || b.adminPath || "") + "</span>" +
+              (it.autoEvidence ? '<span class="tag tag-strong">Автоскан: ' + esc(it.autoEvidence) + "</span>" : "") +
+              "</div>" +
+              "</div>" +
+              '<select class="select cms-item-select" data-cms-block="' + esc(b.id) + '" data-cms-item="' + esc(it.id) + '" style="min-width:160px;">' +
+              '<option value="needs_setup"' + (it.status === "needs_setup" ? " selected" : "") + ">Требует настройки</option>" +
+              '<option value="verified"' + (it.status === "verified" ? " selected" : "") + ">Проверено</option>" +
+              '<option value="not_applicable"' + (it.status === "not_applicable" ? " selected" : "") + ">Не применимо</option>" +
+              "</select>" +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+        return (
+          '<details data-cms-details="' + esc(b.id) + '"' + (isOpen ? " open" : "") + ">" +
+          "<summary>" +
+          '<span class="row" style="gap:6px;">' +
+          '<span class="dot ' + dot + '"></span>' +
+          '<strong style="color:var(--foreground);">' + esc(b.number) + ". " + esc(b.title) + "</strong>" +
+          '<span class="tag mono">' + esc(b.module) + "</span>" +
+          "</span>" +
+          '<span class="row" style="gap:6px;">' +
+          '<span class="tag mono">' + (st.applicable === 0 ? "Н/П" : esc(st.verified) + "/" + esc(st.applicable) + " (" + esc(st.completionPct) + "%)") + "</span>" +
+          '<span class="text-link lbl-open">Показать</span>' +
+          '<span class="text-link lbl-close">Скрыть</span>' +
+          "</span>" +
+          "</summary>" +
+          '<div class="details-body">' +
+          '<div class="row-between text-xs">' +
+          '<span class="muted mono">Админка / путь: ' + esc(b.adminPath || "—") + "</span>" +
+          '<button type="button" class="btn copy-trigger" data-copy-key="' + esc(pKey) + '">Промпт автопроверки блока</button>' +
+          "</div>" +
+          itemsHtml +
+          "</div>" +
+          "</details>"
+        );
+      })
+      .filter(Boolean)
+      .join("");
+
+    container.innerHTML = htmlBlocks || '<div class="subcard text-xs muted">Нет пунктов по выбранному фильтру.</div>';
+  }
+
   function renderBacklogFilters() {
     const qBox = document.getElementById("backlogQuadrantFilters");
     if (qBox) {
@@ -1735,6 +1920,48 @@ const clientScript = `
       return;
     }
 
+    const cmsF = ev.target.closest("[data-cms-filter]");
+    if (cmsF && cmsF.dataset.cmsFilter) {
+      state.cmsFilter = cmsF.dataset.cmsFilter;
+      renderCmsChecklist();
+      return;
+    }
+
+    const cmsSummary = ev.target.closest("details[data-cms-details] > summary");
+    if (cmsSummary && cmsSummary.parentElement) {
+      const det = cmsSummary.parentElement;
+      const detId = det.dataset.cmsDetails;
+      if (detId) {
+        if (det.open) openCmsBlocks.delete(detId);
+        else openCmsBlocks.add(detId);
+      }
+      return;
+    }
+
+    if (ev.target.closest("#saveCmsChecklistBtn")) {
+      if (vscode) {
+        vscode.postMessage({
+          type: "saveCmsChecklist",
+          archetype: draftCmsChecklist.archetype,
+          archetypeLabel: CMS_ARCHETYPE_LABELS[draftCmsChecklist.archetype] || draftCmsChecklist.archetype,
+          blocks: draftCmsChecklist.blocks,
+        });
+      } else {
+        const jsonStr = JSON.stringify(
+          { schemaVersion: "1.0", archetype: draftCmsChecklist.archetype, blocks: draftCmsChecklist.blocks },
+          null,
+          2
+        );
+        copyText("Сохрани чеклист в docs/memory/cms-checklist.json:\\n" + jsonStr, "JSON чеклиста 1С-Битрикс скопирован");
+      }
+      return;
+    }
+
+    if (ev.target.closest("#openCmsChecklistBtn")) {
+      if (vscode) vscode.postMessage({ type: "openFile", path: "docs/memory/cms-checklist.json" });
+      return;
+    }
+
     const copyBtn = ev.target.closest(".copy-trigger");
     if (copyBtn && copyBtn.dataset.copyKey) {
       const entry = promptRegistry.get(copyBtn.dataset.copyKey);
@@ -1805,6 +2032,37 @@ const clientScript = `
       draftPermissions.rules[axis].level = sel.value;
       draftPermissions.profile = "custom";
       renderPermissionsMatrix();
+      return;
+    }
+    const cmsSel = ev.target.closest(".cms-item-select");
+    if (cmsSel && cmsSel.dataset.cmsBlock && cmsSel.dataset.cmsItem) {
+      const bId = cmsSel.dataset.cmsBlock;
+      const iId = cmsSel.dataset.cmsItem;
+      openCmsBlocks.add(bId);
+      (draftCmsChecklist.blocks || []).forEach(function (b) {
+        if (b.id !== bId) return;
+        (b.items || []).forEach(function (it) {
+          if (it.id === iId) it.status = cmsSel.value;
+        });
+      });
+      renderCmsChecklist();
+      showToast("Статус обновлён — нажмите «Сохранить чеклист»");
+      return;
+    }
+    if (ev.target && ev.target.id === "cmsArchetypeSelect") {
+      const nextArch = ev.target.value;
+      draftCmsChecklist.archetype = nextArch;
+      draftCmsChecklist.archetypeLabel = CMS_ARCHETYPE_LABELS[nextArch] || nextArch;
+      const nonEcom = nextArch === "services" || nextArch === "corporate" || nextArch === "minimal";
+      (draftCmsChecklist.blocks || []).forEach(function (b) {
+        if (!CMS_ECOM_BLOCKS[b.id]) return;
+        (b.items || []).forEach(function (it) {
+          if (nonEcom) it.status = "not_applicable";
+          else if (it.status === "not_applicable") it.status = "needs_setup";
+        });
+      });
+      renderCmsChecklist();
+      showToast("Профиль чеклиста переключён на «" + draftCmsChecklist.archetypeLabel + "»");
     }
   });
 
@@ -1854,6 +2112,7 @@ const clientScript = `
     renderTrackFilters();
     renderInitiatives();
     renderKnowledge();
+    renderCmsChecklist();
     renderVelocityAndSprints();
     renderBacklog();
     renderGitAndLocal();
@@ -1994,8 +2253,45 @@ const html = `<!DOCTYPE html>
       </div>
     </section>
 
-    <!-- TAB 2: KNOWLEDGE -->
+    <!-- TAB 2: KNOWLEDGE & CMS READINESS -->
     <section id="tab-knowledge" class="tab-panel hidden col">
+      <div class="panel col">
+        <div class="row-between">
+          <div>
+            <h2 class="title-md">10-блочный Мастер-Чеклист готовности модулей 1С-Битрикс</h2>
+            <div class="text-xs muted">Профильная проверка ядра, каталога, магазина, почты, безопасности, SEO/GEO и Read-Only Browser QA.</div>
+          </div>
+          <span id="cmsChecklistBadge" class="tag mono">—</span>
+        </div>
+        <div class="row-between">
+          <div class="row text-xs">
+            <span class="muted">Архетип проекта:</span>
+            <select id="cmsArchetypeSelect" class="select">
+              <option value="store">Интернет-магазин (E-commerce)</option>
+              <option value="crm_b24">ИМ + Битрикс24 Коробка (CRM)</option>
+              <option value="services">Сайт услуг (без онлайн-оплаты)</option>
+              <option value="corporate">Корпоративный сайт</option>
+              <option value="minimal">Минимальный (Базовое ядро)</option>
+            </select>
+          </div>
+          <div class="row">
+            <button type="button" id="openCmsChecklistBtn" class="btn">Открыть JSON</button>
+            <button type="button" id="saveCmsChecklistBtn" class="btn btn-primary">Сохранить чеклист</button>
+          </div>
+        </div>
+        <div class="col" style="gap:4px;">
+          <div class="row-between text-xs">
+            <span class="muted">Готовность модулей CMS</span>
+            <strong class="mono" id="cmsProgressLabel">—</strong>
+          </div>
+          <div class="progress-track">
+            <div id="cmsProgressBar" class="progress-fill" style="width:0%;background:var(--primary);"></div>
+          </div>
+        </div>
+        <div id="cmsFilterBar" class="row"></div>
+        <div id="cmsChecklistBlocks" class="col" style="gap:6px;"></div>
+      </div>
+
       <div class="panel col">
         <div class="row-between">
           <div>

@@ -18,6 +18,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildCmsChecklist } from "./bitrix-cms-checklist.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -416,6 +417,31 @@ if (!dryRun) {
   fs.mkdirSync(targetDir, { recursive: true });
 }
 
+const cmsChecklistSeed = buildCmsChecklist(targetDir, { archetype: profile, force: true });
+const cmsChecklistJsonContent = JSON.stringify(
+  {
+    schemaVersion: "1.0",
+    archetype: cmsChecklistSeed.archetype,
+    archetypeLabel: cmsChecklistSeed.archetypeLabel,
+    updatedAt: `${yyyy}-${mm}-${dd}`,
+    blocks: cmsChecklistSeed.blocks.map((b) => ({
+      id: b.id,
+      number: b.number,
+      title: b.title,
+      module: b.module,
+      adminPath: b.adminPath,
+      items: b.items.map((it) => ({
+        id: it.id,
+        title: it.title,
+        status: it.status,
+        note: it.note || "",
+      })),
+    })),
+  },
+  null,
+  2
+) + "\n";
+
 writeTargetFile(".agents/plugins.json", pluginsJsonContent, updateConfig);
 writeTargetFile(".agents/permissions.json", permissionsJsonContent);
 writeTargetFile(".gitignore", gitignoreContent);
@@ -425,6 +451,7 @@ writeTargetFile("docs/memory/codemap.md", renderTemplate("memory-codemap.md"));
 writeTargetFile("docs/memory/decisions.md", renderTemplate("memory-decisions.md"));
 writeTargetFile("docs/memory/status.md", renderTemplate("memory-status.md"));
 writeTargetFile("docs/memory/velocity.json", velocityJsonContent);
+writeTargetFile("docs/memory/cms-checklist.json", cmsChecklistJsonContent);
 writeTargetFile("docs/backlog.md", renderTemplate("backlog.md"));
 writeTargetFile(`docs/daily/${dd}.${mm}.${yy}.md`, renderTemplate("daily-log.md"));
 

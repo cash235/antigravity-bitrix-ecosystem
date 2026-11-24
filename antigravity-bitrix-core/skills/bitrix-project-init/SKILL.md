@@ -108,7 +108,8 @@ Read the reference templates from `~/.gemini/config/plugins/antigravity-bitrix-c
 4. **`docs/memory/decisions.md`** — ADR registry (Michael Nygard format) seeded with **`ADR-01`** capturing the foundational architecture & constraints collected in Step 2.
 5. **`docs/memory/status.md`** — Active focus, initial status entry, and explicit **Red Lines** section.
 6. **`docs/backlog.md`** — Prioritized task board with **North Star** goal, **2-Scale Priority** (`Q1–Q4` Eisenhower × `S/M/L/XL` complexity + `Est / Actual` hours), explicit **Business Value**, and per-task **Acceptance Checklist (DoD)** (`#001`, `#002`, ...).
-7. **`docs/daily/DD.MM.YY.md`** — First daily log entry documenting project onboarding and generated architecture map.
+7. **`docs/memory/cms-checklist.json`** — Profile-tailored **10-Block 1C-Bitrix CMS Readiness Master Checklist** (generated via `node ~/.gemini/config/plugins/antigravity-bitrix-core/scripts/bitrix-cms-checklist.mjs . --archetype <store|crm_b24|services|corporate|minimal> --write`), covering environment/Cron, `main`, `iblock`, `catalog/currency`, `sale`, payments/delivery, `b_event` mail/SMS, Production Audit, SEO/GEO, and Read-Only Browser QA (`375/768/1440px`).
+8. **`docs/daily/DD.MM.YY.md`** — First daily log entry documenting project onboarding and generated architecture map.
 
 ---
 

@@ -2,6 +2,13 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.4.0] - 2026-11-24
+
+### Added (Sprint 3: 10-Block CMS Readiness Master Checklist, Release Tooling & Full Sprint Roadmap)
+- **`PLUGIN-005` — 10-Block 1C-Bitrix CMS Readiness Master Checklist**: zero-dependency generator & local auto-inspector (`antigravity-bitrix-core/scripts/bitrix-cms-checklist.mjs`) tailored to 5 project archetypes (`store`, `crm_b24`, `services`, `corporate`, `minimal`), covering Environment/Cron, `main`, `iblock`, `catalog/currency`, `sale`, Payments/Delivery, `b_event` Mail/SMS, Production Audit, SEO/GEO, and Read-Only Browser QA (`375/768/1440px`). Interactive Dashboard editor on «Знания и CMS» tab with live status toggles, archetype switching, 1-click block audit prompts, and direct saving to `docs/memory/cms-checklist.json`.
+- **`PLUGIN-017` — Release Automation & In-Dashboard Changelog**: zero-dependency `scripts/prepare-release.mjs` (`--dry-run` / `--json` / `--out`) validating version consistency and generating GitHub Release notes, plus «История версий (Changelog)» viewer in the Dashboard and version feature table in `README.md`.
+- **Full Sprint Roadmap & Visual Controls**: Dashboard and IDE Activity Bar sidebar now display all sprints (completed, active, planned) with date windows (`startDate → projectedDeadline`), per-sprint task lists, visual `.agents/permissions.json` & `velocity.json` editors, progress bars, and Russian UI localization.
+
 ## [v2.3.0] - 2026-11-24
 
 ### Added (Sprint 2: Permissions Matrix, Adaptive Sprints/Velocity & Setup UX)
