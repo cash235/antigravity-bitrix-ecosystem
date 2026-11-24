@@ -30,13 +30,14 @@ if (args.includes("--help") || args.includes("-h")) {
   node bitrix-bootstrap.mjs <target-dir> [options]
 
 Options:
-  --profile <full|store|corporate|minimal>  Plugin bundle profile (default: full)
-  --plugins <list>                          Comma-separated short/full names (e.g. core,seo-geo,qa)
-  --name <string>                           Human-readable project name (default: folder name)
-  --update-config                           Safely overwrite ONLY .agents/plugins.json (keeps docs/memory/* intact)
-  --force                                   Overwrite all existing scaffold files
-  --dry-run                                 Preview actions without writing files
-  --json                                    Output machine-readable JSON report
+  --profile <full|store|corporate|minimal>        Plugin bundle profile (default: full)
+  --plugins <list>                                Comma-separated short/full names (e.g. core,seo-geo,qa)
+  --permissions-profile <safe_default|local_dev|staging_full>  Blast-radius policy profile (default: safe_default)
+  --name <string>                                 Human-readable project name (default: folder name)
+  --update-config                                 Safely overwrite ONLY .agents/plugins.json (keeps docs/memory/* intact)
+  --force                                         Overwrite all existing scaffold files
+  --dry-run                                       Preview actions without writing files
+  --json                                          Output machine-readable JSON report
 `);
   process.exit(0);
 }
@@ -53,7 +54,7 @@ function getFlagValue(name) {
   return null;
 }
 
-const valueFlags = new Set(["--profile", "--plugins", "--name"]);
+const valueFlags = new Set(["--profile", "--plugins", "--permissions-profile", "--name"]);
 /** @type {string | null} */
 let targetArg = null;
 for (let i = 0; i < args.length; i++) {
@@ -69,6 +70,7 @@ for (let i = 0; i < args.length; i++) {
 const targetDir = path.resolve(targetArg || process.cwd());
 const profile = (getFlagValue("--profile") || "full").toLowerCase();
 const customPluginsRaw = getFlagValue("--plugins");
+const permissionsProfile = (getFlagValue("--permissions-profile") || "safe_default").toLowerCase();
 const projectName = getFlagValue("--name") || path.basename(targetDir);
 const updateConfig = args.includes("--update-config");
 const force = args.includes("--force");
@@ -289,6 +291,60 @@ function renderTemplate(templateFile) {
   return content;
 }
 
+/** @type {Record<string, Record<string, { level: string, note: string }>>} */
+const PERMISSION_PROFILES = {
+  safe_default: {
+    outside_workspace: { level: "deny", note: "Только внутри текущей папки проекта" },
+    internet: { level: "read_only", note: "Только чтение официальной документации и live SEO/QA-чеки (без мутаций)" },
+    terminal: { level: "read_only", note: "php -l, node --check, git status/diff; мутации через подтверждение" },
+    ssh: { level: "deny", note: "Подключение по SSH запрещено без явного разрешения оператора" },
+    database: { level: "deny", note: "Прямые запросы к БД запрещены; миграции только через D7-скрипты и ревью" },
+    deploy: { level: "ask", note: "Любой git push / деплой на staging или prod только после подтверждения" },
+  },
+  local_dev: {
+    outside_workspace: { level: "read_only", note: "Чтение глобальных плагинов/шаблонов; запись только в workspace" },
+    internet: { level: "read_only", note: "Документация, read-only проверки URL и API" },
+    terminal: { level: "allow", note: "Локальные сборки, тесты, git commit (без деструктивных rm -rf / force push)" },
+    ssh: { level: "ask", note: "Только по явному подтверждению оператора" },
+    database: { level: "read_only", note: "Только SELECT / инспекция схемы на локальном стенде" },
+    deploy: { level: "ask", note: "Push / деплой только после явного подтверждения" },
+  },
+  staging_full: {
+    outside_workspace: { level: "read_only", note: "Чтение внешних конфигов по необходимости; запись только в workspace" },
+    internet: { level: "allow", note: "Документация, внешние API и staging-проверки" },
+    terminal: { level: "allow", note: "Полный локальный CLI и тестовые скрипты" },
+    ssh: { level: "staging_rw", note: "Чтение/запись на staging; на prod строго ask/read_only" },
+    database: { level: "staging_rw", note: "Чтение/миграции на staging; на prod строго ask" },
+    deploy: { level: "staging_only", note: "Автодеплой допустим только на staging; prod строго через подтверждение" },
+  },
+};
+
+const selectedPermissions = PERMISSION_PROFILES[permissionsProfile] || PERMISSION_PROFILES.safe_default;
+const permissionsJsonContent = JSON.stringify(
+  {
+    schemaVersion: "1.0",
+    profile: PERMISSION_PROFILES[permissionsProfile] ? permissionsProfile : "safe_default",
+    updatedAt: `${yyyy}-${mm}-${dd}`,
+    rules: selectedPermissions,
+    notes: "Настройте уровни (deny | read_only | ask | staging_rw | staging_only | allow). Агент и все субагенты обязаны соблюдать эти границы.",
+  },
+  null,
+  2
+) + "\n";
+
+const velocityJsonContent = JSON.stringify(
+  {
+    schemaVersion: "1.0",
+    targetHoursPerDay: 2.0,
+    activeDaysPerWeek: 5,
+    sprintLengthDays: 7,
+    autoCalibrateFromHistory: true,
+    notes: "Используется планировщиком спринтов и расчётом реалистичных дедлайнов в Command Center Dashboard.",
+  },
+  null,
+  2
+) + "\n";
+
 const pluginsJsonContent = JSON.stringify(
   {
     entries: [
@@ -361,12 +417,14 @@ if (!dryRun) {
 }
 
 writeTargetFile(".agents/plugins.json", pluginsJsonContent, updateConfig);
+writeTargetFile(".agents/permissions.json", permissionsJsonContent);
 writeTargetFile(".gitignore", gitignoreContent);
 writeTargetFile("AGENTS.md", renderTemplate("AGENTS.project.md"));
 writeTargetFile("docs/memory/README.md", renderTemplate("memory-README.md"));
 writeTargetFile("docs/memory/codemap.md", renderTemplate("memory-codemap.md"));
 writeTargetFile("docs/memory/decisions.md", renderTemplate("memory-decisions.md"));
 writeTargetFile("docs/memory/status.md", renderTemplate("memory-status.md"));
+writeTargetFile("docs/memory/velocity.json", velocityJsonContent);
 writeTargetFile("docs/backlog.md", renderTemplate("backlog.md"));
 writeTargetFile(`docs/daily/${dd}.${mm}.${yy}.md`, renderTemplate("daily-log.md"));
 

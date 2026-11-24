@@ -667,6 +667,194 @@ if (isGitRepo) {
   }
 }
 
+// 6.5. Project Permissions & Blast-Radius Policy (.agents/permissions.json)
+const DEFAULT_PERMISSIONS = {
+  outside_workspace: { level: "deny", note: "Только внутри текущей папки проекта" },
+  internet: { level: "read_only", note: "Только чтение официальной документации и live SEO/QA-чеки" },
+  terminal: { level: "read_only", note: "Проверки синтаксиса и git status/diff; мутации через подтверждение" },
+  ssh: { level: "deny", note: "Подключение по SSH запрещено без явного разрешения" },
+  database: { level: "deny", note: "Прямые запросы к БД запрещены; миграции через D7" },
+  deploy: { level: "ask", note: "Любой git push / деплой только после подтверждения" },
+};
+const permPath = path.join(rootDir, ".agents", "permissions.json");
+let permissions = {
+  configured: false,
+  profile: "unconfigured (safe fallback)",
+  path: ".agents/permissions.json",
+  rules: DEFAULT_PERMISSIONS,
+};
+if (fs.existsSync(permPath)) {
+  try {
+    const parsedPerm = JSON.parse(readSafe(permPath, 20000).replace(/^\uFEFF/, ""));
+    permissions = {
+      configured: true,
+      profile: parsedPerm.profile || "custom",
+      updatedAt: parsedPerm.updatedAt || null,
+      path: ".agents/permissions.json",
+      rules: Object.assign({}, DEFAULT_PERMISSIONS, parsedPerm.rules || {}),
+    };
+  } catch {
+    permissions.profile = "invalid_json";
+  }
+}
+
+// 6.6. Operator Velocity & Adaptive Sprint Deadline Engine
+let velocityCfg = null;
+const velocityPath = path.join(rootDir, "docs", "memory", "velocity.json");
+if (fs.existsSync(velocityPath)) {
+  try {
+    velocityCfg = JSON.parse(readSafe(velocityPath, 10000).replace(/^\uFEFF/, ""));
+  } catch {
+    velocityCfg = null;
+  }
+}
+
+// Observe real daily session logs (docs/daily/*.md)
+const dailyHoursSamples = [];
+if (fs.existsSync(dailyDir)) {
+  for (const f of fs.readdirSync(dailyDir).filter((x) => x.endsWith(".md")).slice(-20)) {
+    const txt = readSafe(path.join(dailyDir, f), 16000);
+    const hm = txt.match(/Затраченное время за сессию\*\*:\s*`?(\d+(?:[.,]\d+)?)/i);
+    if (hm) dailyHoursSamples.push(Number(hm[1].replace(",", ".")));
+  }
+}
+
+// Observe real active days/week and session span from last 28 days of Git commits
+let observedDaysPerWeek = null;
+let observedGitHoursPerActiveDay = null;
+if (isGitRepo) {
+  const isoRaw = runGit(["log", "--since=28 days ago", "--pretty=format:%aI"]) || "";
+  const datesMap = new Map();
+  for (const ts of isoRaw.split(/\r?\n/).filter(Boolean)) {
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) continue;
+    const dayKey = ts.slice(0, 10);
+    if (!datesMap.has(dayKey)) datesMap.set(dayKey, []);
+    datesMap.get(dayKey).push(d.getTime());
+  }
+  if (datesMap.size > 0) {
+    let oldestMs = Date.now();
+    let spanSum = 0;
+    for (const times of datesMap.values()) {
+      const minT = Math.min(...times);
+      const maxT = Math.max(...times);
+      if (minT < oldestMs) oldestMs = minT;
+      // Estimate active session duration: span between first & last commit + 0.75h baseline
+      const hrs = Math.min(8, Math.max(0.75, (maxT - minT) / 3600000 + 0.75));
+      spanSum += hrs;
+    }
+    const weeksObserved = Math.max(1, Math.min(4, (Date.now() - oldestMs) / (7 * 86400000)));
+    observedDaysPerWeek = Number(Math.min(7, Math.max(1, datesMap.size / weeksObserved)).toFixed(1));
+    observedGitHoursPerActiveDay = Number((spanSum / datesMap.size).toFixed(1));
+  }
+}
+
+// Compute Est -> Actual calibration factor across completed tasks with both numbers
+let calEstSum = 0;
+let calActSum = 0;
+for (const t of [...allDoneTasks, ...allOpenTasks]) {
+  if (typeof t.estHours === "number" && t.estHours > 0 && typeof t.actualHours === "number" && t.actualHours > 0) {
+    calEstSum += t.estHours;
+    calActSum += t.actualHours;
+  }
+}
+const calibrationFactor = calEstSum > 0 ? Number((calActSum / calEstSum).toFixed(2)) : 1.0;
+
+const avgDailyLogHours = dailyHoursSamples.length > 0
+  ? Number((dailyHoursSamples.reduce((a, b) => a + b, 0) / dailyHoursSamples.length).toFixed(1))
+  : null;
+
+const effectiveHoursPerDay =
+  velocityCfg?.targetHoursPerDay ?? avgDailyLogHours ?? observedGitHoursPerActiveDay ?? 2.0;
+const effectiveDaysPerWeek =
+  velocityCfg?.activeDaysPerWeek ?? observedDaysPerWeek ?? 5.0;
+const weeklyCapacityHours = Number((effectiveHoursPerDay * effectiveDaysPerWeek).toFixed(1));
+const velocitySource = velocityCfg
+  ? (observedDaysPerWeek || avgDailyLogHours ? "velocity.json + наблюдения" : "velocity.json")
+  : (avgDailyLogHours ? "docs/daily/*" : observedDaysPerWeek ? "git log (28 дн.)" : "default (2ч × 5д)");
+
+function addWorkDays(startDate, workDaysNeeded, activeDaysPerWeek) {
+  const calendarFactor = 7 / Math.max(1, Math.min(7, activeDaysPerWeek));
+  const calDays = Math.max(1, Math.ceil(workDaysNeeded * calendarFactor));
+  const d = new Date(startDate.getTime() + calDays * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+// Group open tasks into sprints and project realistic deadlines sequentially
+const sprintMap = new Map();
+for (const t of allOpenTasks) {
+  const spName = t.sprint || (t.quadrant === "Q1" ? "Спринт Q1 (Срочный)" : "Ближайший спринт");
+  if (!sprintMap.has(spName)) {
+    sprintMap.set(spName, { name: spName, tasksCount: 0, q1Count: 0, estHours: 0, tasks: [] });
+  }
+  const sp = sprintMap.get(spName);
+  sp.tasksCount++;
+  if (t.quadrant === "Q1") sp.q1Count++;
+  const est = typeof t.estHours === "number" ? t.estHours : (t.size === "S" ? 1 : t.size === "L" ? 4.5 : t.size === "XL" ? 8 : 2.5);
+  sp.estHours = Number((sp.estHours + est).toFixed(1));
+  sp.tasks.push(t.id || t.text.slice(0, 24));
+}
+
+let cursorDate = new Date();
+const sprints = [];
+for (const sp of sprintMap.values()) {
+  const calibratedHours = Number(Math.max(0.5, sp.estHours * calibrationFactor).toFixed(1));
+  const loadPct = weeklyCapacityHours > 0 ? Math.round((sp.estHours / weeklyCapacityHours) * 100) : 0;
+  const workDaysNeeded = Math.max(1, Math.ceil(sp.estHours / Math.max(0.5, effectiveHoursPerDay)));
+  const deadline = addWorkDays(cursorDate, workDaysNeeded, effectiveDaysPerWeek);
+  cursorDate = new Date(deadline + "T00:00:00Z");
+  sprints.push({
+    name: sp.name,
+    tasksCount: sp.tasksCount,
+    q1Count: sp.q1Count,
+    estHours: sp.estHours,
+    calibratedHours,
+    loadPct,
+    overloaded: loadPct > 100,
+    workDaysNeeded,
+    projectedDeadline: deadline,
+  });
+}
+
+const velocity = {
+  hoursPerDay: effectiveHoursPerDay,
+  daysPerWeek: effectiveDaysPerWeek,
+  weeklyCapacityHours,
+  observedDaysPerWeek,
+  observedHoursPerDay: avgDailyLogHours ?? observedGitHoursPerActiveDay,
+  calibrationFactor,
+  source: velocitySource,
+  configured: Boolean(velocityCfg),
+  sprints,
+};
+
+// 6.7. Step-by-Step Setup Pipeline & Auto-Deactivation State (PLUGIN-003 + PLUGIN-004)
+const hasPluginsJson = fs.existsSync(path.join(rootDir, ".agents", "plugins.json"));
+const hasGitignore = fs.existsSync(path.join(rootDir, ".gitignore"));
+const hasCanonicalMemory =
+  memoryFiles.rootAgents.exists &&
+  memoryFiles.codemap.exists &&
+  memoryFiles.decisions.exists &&
+  memoryFiles.status.exists;
+const qaClean = !qaPreflight || (qaPreflight.critical || []).length === 0;
+
+const setupSteps = [
+  { id: "core", label: "Плагин core", done: Boolean(ecosystem.core) },
+  { id: "plugins_json", label: ".agents/plugins.json", done: hasPluginsJson },
+  { id: "permissions", label: "Разрешения", done: permissions.configured },
+  { id: "git", label: "Git + .gitignore", done: isGitRepo && hasGitignore },
+  { id: "memory", label: "Память проекта", done: hasCanonicalMemory },
+  { id: "qa", label: "QA Preflight (0 crit)", done: qaClean },
+];
+const setupCompleted = setupSteps.filter((s) => s.done).length;
+const setupPipeline = {
+  steps: setupSteps,
+  completedCount: setupCompleted,
+  totalSteps: setupSteps.length,
+  allDone: setupCompleted === setupSteps.length,
+  isProjectInitialized: hasPluginsJson && hasCanonicalMemory,
+};
+
 // 7. Automated Heuristic PM & Orchestrator Signals
 const pmSignals = [];
 if (qaPreflight && Array.isArray(qaPreflight.critical) && qaPreflight.critical.length > 0) {
@@ -779,13 +967,16 @@ if (ecosystem.core) score += 10;
 if (latestDaily && latestDaily.ageDays <= 7) score += 5;
 
 const payload = {
-  schemaVersion: "2.2",
+  schemaVersion: "2.3",
   generatedAt: new Date().toISOString(),
   projectName: path.basename(rootDir),
   rootDir,
   northStar,
   readinessScore: Math.min(100, score),
   qaPreflight,
+  permissions,
+  velocity,
+  setupPipeline,
   structure: {
     hasLocalDir: fs.existsSync(localDir),
     hasBitrixDir: fs.existsSync(path.join(rootDir, "bitrix")),

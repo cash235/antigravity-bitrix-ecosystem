@@ -114,13 +114,22 @@ If a needed satellite plugin is not installed/enabled, flag it clearly to the op
 
 ---
 
-## 6. Anti-Loop, Context Hygiene & 5-Axis Self-Evaluation
+## 6. AI-Native Sprint Execution, Velocity Calibration & Safety
 
-1. **Loop Damping**: Maximum **3 failed attempts** on the same error/test. On attempt 3 failure, STOP immediately, summarize root-cause hypotheses + evidence, and escalate to the operator. Never spin burning tokens.
-2. **Strategic Compaction (`/compact`)**:
+1. **Sprint Capacity & Realistic Deadlines**:
+   - Read operator velocity from `bitrix-dashboard-data.mjs` (`velocity`: observed hours/day, active days/week, hours/week from `docs/memory/velocity.json`, `docs/daily/*.md`, `git log`, and `Actual/Est` calibration factor).
+   - Never pack a sprint above `100%` of weekly capacity; split any `XL` (`>6h`) task into `S`/`M` steps before committing to a sprint.
+2. **Small Verifiable Steps (Anti-Vibe-Chaos)**:
+   - Never mix DB/structure changes, business logic, and visual redesign in one giant unverified edit.
+   - Run targeted verification (`php -l`, `node --check`, smoke check) after each small step.
+   - Respect `.agents/permissions.json` boundaries (files outside workspace, internet, terminal, SSH, DB, deploy) at every delegation level.
+3. **End-of-Sprint Security & Hygiene Gate**:
+   - Before closing a sprint, run `bitrix-qa-preflight.mjs` (or check forms, PII, secrets, third-party integrations), create a Git checkpoint/commit, and log `Actual` hours vs `Est`.
+4. **Loop Damping**: Maximum **3 failed attempts** on the same error/test. On attempt 3 failure, STOP immediately, summarize root-cause hypotheses + evidence, and escalate to the operator. Never spin burning tokens.
+5. **Strategic Compaction (`/compact`)**:
    - Recommend `/compact` at clean phase boundaries (**Research → Plan**, **Plan → Implement**, **Completed Milestone → Next Task**).
    - NEVER recommend `/compact` mid-edit while holding partial unverified file changes.
-3. **5-Axis Self-Check Before Final Delivery** (internal silent check; report any gap < 4):
+6. **5-Axis Self-Check Before Final Delivery** (internal silent check; report any gap < 4):
    - **Accuracy** (verified by tools, zero hallucinations)
    - **Completeness** (all ACs and edge cases covered)
    - **Clarity** (structured, owner-friendly, exact file links)

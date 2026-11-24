@@ -175,6 +175,8 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
       <div class="kv-row"><span class="muted">QA Preflight</span><span class="status-inline mono"><span class="dot ${qaDot}"></span>${esc(qaText)}</span></div>
       <div class="kv-row"><span class="muted">Бэклог</span><span class="mono">${esc(snapshot.backlog.doneCount)} done / ${esc(snapshot.backlog.openCount)} open</span></div>
       <div class="kv-row"><span class="muted">Память</span><span class="mono">${esc(snapshot.memory.adrCount)} ADR · ${esc(snapshot.memory.dailyCount)} daily</span></div>
+      <div class="kv-row"><span class="muted">Ритм</span><span class="mono">${snapshot.velocity ? esc(snapshot.velocity.weeklyCapacityHours) + " ч/нед" : "—"}</span></div>
+      <div class="kv-row"><span class="muted">Границы</span><span class="mono">${snapshot.permissions ? esc(snapshot.permissions.profile) : "safe"}</span></div>
       <div class="kv-row"><span class="muted">Контекст</span><span class="mono">~${esc(snapshot.contextBudget.totalBaselineOverheadTokens)} tok</span></div>
     </div>
   </div>
@@ -201,8 +203,10 @@ function renderSidebarHtml(snapshot, errorText, rootDir) {
         Обновить скан
       </button>
       <button type="button" class="btn" data-cmd="initProject">
-        <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
-        Инициализировать проект
+        ${snapshot && snapshot.setupPipeline && snapshot.setupPipeline.isProjectInitialized
+          ? `<span class="dot dot-ok"></span>Инициализирован (профиль)`
+          : `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>Инициализировать проект`
+        }
       </button>
       <button type="button" class="btn" data-cmd="runQaPreflight">
         <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V4l5-2z" stroke-linejoin="round"/></svg>

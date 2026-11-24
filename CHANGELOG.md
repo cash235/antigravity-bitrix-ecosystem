@@ -2,6 +2,14 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.3.0] - 2026-11-24
+
+### Added (Sprint 2: Permissions Matrix, Adaptive Sprints/Velocity & Setup UX)
+- **`PLUGIN-010` — Project Permissions & Blast-Radius Policy (`.agents/permissions.json`)**: 6-axis boundary control (`outside_workspace`, `internet`, `terminal`, `ssh`, `database`, `deploy`) with `safe_default`, `local_dev`, and `staging_full` profiles, enforced in `rules/AGENTS.md`, scaffolded by `bitrix-bootstrap.mjs`, and displayed in the Dashboard ("Плагины и Границы") + IDE sidebar.
+- **`PLUGIN-006` — Operator Velocity Tracker & Adaptive Sprint Deadlines**: auto-observes `docs/memory/velocity.json`, `docs/daily/*.md`, 28-day `git log` active days/sessions, and `Actual/Est` calibration factor to project realistic sprint capacity & deadlines in the Dashboard.
+- **`PLUGIN-003` — Auto-Deactivation of Completed One-Time Actions**: once a project has `.agents/plugins.json` and canonical memory, init buttons in the IDE sidebar and Dashboard automatically switch to a quiet "Настроено · Профиль" status.
+- **`PLUGIN-004` — Step-by-Step Setup Pipeline**: 6-step deterministic onboarding stepper on the main Dashboard tab that auto-collapses to a single summary bar once all 6 steps pass.
+
 ## [v2.2.0] - 2026-11-24
 
 ### Added (Sprint 1: Governance, Cock-up Prevention & 2-Scale Priorities)

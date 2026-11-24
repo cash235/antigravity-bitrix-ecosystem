@@ -291,7 +291,7 @@ const defaultModels = [
 
 const viewModel = {
   mode,
-  schemaVersion: "2.2",
+  schemaVersion: "2.3",
   generatedAt: (snapshot.generatedAt || new Date().toISOString()).slice(0, 16).replace("T", " "),
   projectName: overlay.projectName || snapshot.projectName || path.basename(rootDir),
   rootDir: snapshot.rootDir || rootDir,
@@ -300,6 +300,22 @@ const viewModel = {
   adrCount: snapshot.memory?.adrCount ?? 0,
   dailyCount: snapshot.memory?.dailyCount ?? 0,
   qaPreflight: snapshot.qaPreflight || null,
+  permissions: snapshot.permissions || { configured: false, profile: "unconfigured", rules: {} },
+  velocity: snapshot.velocity || {
+    hoursPerDay: 2,
+    daysPerWeek: 5,
+    weeklyCapacityHours: 10,
+    calibrationFactor: 1,
+    source: "default",
+    sprints: [],
+  },
+  setupPipeline: snapshot.setupPipeline || {
+    steps: [],
+    completedCount: 0,
+    totalSteps: 6,
+    allDone: false,
+    isProjectInitialized: false,
+  },
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -857,6 +873,117 @@ const clientScript = `
     if (tabKnowledgeBtn) tabKnowledgeBtn.textContent = "Знания (" + DATA.knowledge.length + ")";
     const tabBacklogBtn = document.querySelector('[data-tab="backlog"]');
     if (tabBacklogBtn) tabBacklogBtn.textContent = "Бэклог (" + DATA.backlog.openCount + ")";
+  }
+
+  function renderSetupPipeline() {
+    const el = document.getElementById("setupPipelineBox");
+    if (!el || !DATA.setupPipeline) return;
+    const sp = DATA.setupPipeline;
+    if (!sp.steps || sp.steps.length === 0) {
+      el.classList.add("hidden");
+      return;
+    }
+    el.classList.remove("hidden");
+    if (sp.allDone) {
+      el.innerHTML =
+        '<div class="row-between text-xs">' +
+        '<span class="row"><span class="dot dot-ok"></span><strong>Первичная настройка проекта завершена (' + sp.completedCount + "/" + sp.totalSteps + ")</strong></span>" +
+        '<span class="muted">Одноразовые инструкции автоматически свернуты</span>' +
+        "</div>";
+      return;
+    }
+    el.innerHTML =
+      '<div class="row-between">' +
+      '<div class="title-md">Маршрут настройки (' + sp.completedCount + "/" + sp.totalSteps + ")</div>" +
+      '<span class="text-xs muted">Выполните оставшиеся шаги до старта спринта</span>' +
+      "</div>" +
+      '<div class="row">' +
+      sp.steps
+        .map(function (st, idx) {
+          return (
+            '<span class="tag ' + (st.done ? "" : "tag-strong") + '">' +
+            '<span class="dot ' + (st.done ? "dot-ok" : "dot-warn") + '"></span>' +
+            (idx + 1) + ". " + esc(st.label) +
+            "</span>"
+          );
+        })
+        .join("") +
+      "</div>";
+  }
+
+  function renderVelocityAndSprints() {
+    const box = document.getElementById("sprintsPanel");
+    if (!box || !DATA.velocity) return;
+    const v = DATA.velocity;
+    document.getElementById("velSourceBadge").textContent = v.source || "default";
+    document.getElementById("velSummaryText").textContent =
+      "Ритм: " + v.hoursPerDay + " ч/день × " + v.daysPerWeek + " дн/нед = " + v.weeklyCapacityHours +
+      " ч/нед · Коэфф. точности (Actual/Est): " + v.calibrationFactor + "x";
+
+    const listEl = document.getElementById("sprintsGrid");
+    if (!v.sprints || v.sprints.length === 0) {
+      listEl.innerHTML = '<div class="subcard text-xs muted">Все задачи в спринтах закрыты.</div>';
+      return;
+    }
+    listEl.innerHTML = v.sprints
+      .map(function (sp) {
+        const dot = sp.overloaded ? "dot-warn" : "dot-ok";
+        const pctWidth = Math.min(100, sp.loadPct || 0);
+        return (
+          '<div class="subcard col" style="gap:5px;">' +
+          '<div class="row-between">' +
+          '<strong class="text-xs">' + esc(sp.name) + "</strong>" +
+          '<span class="tag mono"><span class="dot ' + dot + '"></span>Дедлайн: ' + esc(sp.projectedDeadline) + "</span>" +
+          "</div>" +
+          '<div class="row-between text-xs muted mono">' +
+          "<span>" + sp.tasksCount + " задач · Est " + sp.estHours + "ч" + (sp.q1Count ? " · Q1:" + sp.q1Count : "") + "</span>" +
+          "<span>" + sp.loadPct + "% нед." + (sp.overloaded ? " (перегруз)" : "") + "</span>" +
+          "</div>" +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pctWidth + '%;background:' + (sp.overloaded ? "var(--warning)" : "var(--primary)") + ';"></div></div>' +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function renderPermissionsMatrix() {
+    const grid = document.getElementById("permissionsGrid");
+    if (!grid || !DATA.permissions) return;
+    const p = DATA.permissions;
+    const badge = document.getElementById("permProfileBadge");
+    if (badge) {
+      badge.textContent = p.configured ? "профиль: " + p.profile : "не настроен (safe fallback)";
+      badge.className = "tag mono " + (p.configured ? "tag-success" : "tag-warning");
+    }
+    const labels = {
+      outside_workspace: "Файлы вне проекта",
+      internet: "Интернет / API",
+      terminal: "Терминал / CLI",
+      ssh: "SSH / Серверы",
+      database: "База данных",
+      deploy: "Деплой / Git Push",
+    };
+    const keys = Object.keys(labels);
+    grid.innerHTML = keys
+      .map(function (k) {
+        const rule = (p.rules && p.rules[k]) || { level: "ask", note: "Не задано" };
+        const lvl = String(rule.level || "ask");
+        const dot = lvl === "deny" ? "dot-err" : lvl === "allow" ? "dot-ok" : "dot-warn";
+        return (
+          '<div class="subcard col" style="gap:4px;">' +
+          '<div class="row-between">' +
+          '<strong class="text-xs">' + esc(labels[k]) + "</strong>" +
+          '<span class="tag tag-strong mono"><span class="dot ' + dot + '"></span>' + esc(lvl) + "</span>" +
+          "</div>" +
+          '<div class="text-xs muted">' + esc(rule.note || "") + "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    const permPrompt =
+      "Настрой файл .agents/permissions.json для этого проекта: уточни у меня допустимые уровни (deny / read_only / ask / staging_rw / staging_only / allow) по 6 осям (outside_workspace, internet, terminal, ssh, database, deploy) и сохрани политику.";
+    promptRegistry.set("perm:configure", { text: permPrompt, label: "Промпт настройки разрешений скопирован" });
   }
 
   function renderBlindSpots() {
@@ -1470,19 +1597,32 @@ const clientScript = `
   // Initial render
   try {
     renderHeader();
+    renderSetupPipeline();
     renderBlindSpots();
     renderTrackFilters();
     renderInitiatives();
     renderKnowledge();
+    renderVelocityAndSprints();
     renderBacklog();
     renderGitAndLocal();
     renderEcosystem();
+    renderPermissionsMatrix();
     switchTab("orchestrator");
   } catch (err) {
     showFatal(err && err.message ? err.message : String(err));
   }
 })();
 `;
+
+const initBtnHtml = viewModel.setupPipeline.isProjectInitialized
+  ? `<button type="button" class="btn" data-ide-action="initProject" title="Проект уже инициализирован — нажмите, чтобы обновить профиль плагинов">
+          <span class="dot dot-ok"></span>
+          Настроено · Профиль
+        </button>`
+  : `<button type="button" class="btn" data-ide-action="initProject">
+          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+          Инициализировать
+        </button>`;
 
 const ideActionBar = isWebview
   ? `
@@ -1496,10 +1636,7 @@ const ideActionBar = isWebview
           <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.7M13.5 2.5v2.8h-2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Обновить скан
         </button>
-        <button type="button" class="btn" data-ide-action="initProject">
-          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
-          Инициализировать
-        </button>
+        ${initBtnHtml}
         <button type="button" class="btn" data-ide-action="runQaPreflight">
           <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l5 2v4c0 3-2 5-5 6-3-1-5-3-5-6V4l5-2z" stroke-linejoin="round"/></svg>
           QA Preflight
@@ -1572,12 +1709,14 @@ const html = `<!DOCTYPE html>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="knowledge">Знания</button>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="backlog">Бэклог</button>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="git">Git и /local/</button>
-        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="ecosystem">Плагины и Бюджет</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="ecosystem">Плагины и Границы</button>
       </nav>
     </header>
 
     <!-- TAB 1: ORCHESTRATOR -->
     <section id="tab-orchestrator" class="tab-panel col">
+      <div id="setupPipelineBox" class="panel col hidden"></div>
+
       <div class="panel col">
         <div class="row-between">
           <h2 class="title-md">Радар «Слепых пятен»</h2>
@@ -1635,6 +1774,17 @@ const html = `<!DOCTYPE html>
       <div id="northStarBox" class="panel col hidden" style="gap:4px;">
         <div class="title-md">Конечная цель проекта (North Star)</div>
         <div id="northStarText" class="text-xs"></div>
+      </div>
+
+      <div id="sprintsPanel" class="panel col">
+        <div class="row-between">
+          <div>
+            <h2 class="title-md">Спринты, ритм и дедлайны</h2>
+            <div id="velSummaryText" class="text-xs muted">—</div>
+          </div>
+          <span id="velSourceBadge" class="tag mono">—</span>
+        </div>
+        <div id="sprintsGrid" class="grid-3"></div>
       </div>
 
       <div class="panel col">
@@ -1726,8 +1876,22 @@ const html = `<!DOCTYPE html>
       </div>
     </section>
 
-    <!-- TAB 5: ECOSYSTEM -->
+    <!-- TAB 5: ECOSYSTEM & PERMISSIONS -->
     <section id="tab-ecosystem" class="tab-panel hidden col">
+      <div class="panel col">
+        <div class="row-between">
+          <div>
+            <h2 class="title-md">Матрица разрешений и границ (.agents/permissions.json)</h2>
+            <div class="text-xs muted">Ограничивает выход агента и субагентов за пределы проекта, в интернет, терминал, SSH, БД и деплой.</div>
+          </div>
+          <div class="row">
+            <span id="permProfileBadge" class="tag mono">—</span>
+            <button type="button" class="btn copy-trigger" data-copy-key="perm:configure">Промпт настройки</button>
+          </div>
+        </div>
+        <div id="permissionsGrid" class="grid-3"></div>
+      </div>
+
       <div class="panel col">
         <div class="row-between">
           <div>
