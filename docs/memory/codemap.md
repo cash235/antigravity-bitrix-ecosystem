@@ -15,6 +15,7 @@
 - `antigravity-bitrix-core/scripts/bitrix-dashboard-data.mjs` — сборщик снапшота (`schemaVersion: 2.3`): структура, память, 2-шкальный бэклог + North Star + чеклисты, авто-интеграция `bitrix-qa-preflight.mjs`, ритм/спринты/дедлайны, `.agents/permissions.json`, `setupPipeline`.
 - `antigravity-bitrix-core/scripts/bitrix-dashboard-render.mjs` — детерминированный HTML/JS-рендерер Command Center (`--mode artifact` для Side Pane и `--mode webview` для IDE, безопасная JSON-инъекция, визуальный редактор разрешений и ритма).
 - `antigravity-bitrix-core/scripts/bitrix-bootstrap.mjs` — 1-командная инициализация проектов (`.agents/plugins.json`, `.agents/permissions.json`, `.gitignore`, `AGENTS.md`, `docs/memory/*`, `docs/backlog.md`, детектор локальных оверрайдов).
+- `scripts/prepare-release.mjs` — подготовка release notes из `CHANGELOG.md`, `BACKLOG_ECOSYSTEM.md`, манифестов `plugin.json` и `git log` + проверка версий (`--dry-run` / `--json`).
 - Корневые оркестрационные скрипты: `install-ecosystem.ps1`/`.sh`, `init-bitrix-project.ps1`/`.sh`.
 
 ## 3. Автоматизация и публикация

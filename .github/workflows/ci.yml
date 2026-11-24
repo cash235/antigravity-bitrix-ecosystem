@@ -23,9 +23,11 @@ jobs:
 
       - name: Check JS/MJS syntax (node --check)
         run: |
-          for f in antigravity-bitrix-*/scripts/*.mjs antigravity-bitrix-ide-panel/extension.js; do
-            echo "Checking $f"
-            node --check "$f"
+          for f in antigravity-bitrix-*/scripts/*.mjs scripts/*.mjs antigravity-bitrix-ide-panel/extension.js; do
+            if [ -f "$f" ]; then
+              echo "Checking $f"
+              node --check "$f"
+            fi
           done
 
       - name: Validate plugin manifests, skills, agents, and collision rules

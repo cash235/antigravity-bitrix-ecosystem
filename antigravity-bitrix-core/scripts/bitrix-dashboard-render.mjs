@@ -321,6 +321,7 @@ const viewModel = {
     allDone: false,
     isProjectInitialized: false,
   },
+  changelog: snapshot.changelog || { exists: false, path: "CHANGELOG.md", releases: [] },
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -1647,6 +1648,51 @@ const clientScript = `
       DATA.mcps.length > 0
         ? DATA.mcps.map(function (m) { return '<span class="tag tag-strong mono">' + esc(m) + "</span>"; }).join("")
         : '<span class="text-xs muted">MCP-серверы не обнаружены</span>';
+
+    const clPanel = document.getElementById("changelogPanel");
+    const clList = document.getElementById("changelogList");
+    const clCount = document.getElementById("changelogCountBadge");
+    if (clPanel && clList) {
+      const rels = (DATA.changelog && Array.isArray(DATA.changelog.releases)) ? DATA.changelog.releases : [];
+      if (rels.length === 0) {
+        clPanel.classList.add("hidden");
+      } else {
+        clPanel.classList.remove("hidden");
+        if (clCount) clCount.textContent = rels.length + " верс.";
+        clList.innerHTML = rels
+          .map(function (r, idx) {
+            const itemsHtml =
+              '<ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px;">' +
+              (r.items || [])
+                .map(function (it) { return '<li class="text-xs">' + esc(it) + "</li>"; })
+                .join("") +
+              "</ul>";
+            if (idx === 0) {
+              return (
+                '<div class="subcard col" style="gap:6px;">' +
+                '<div class="row-between">' +
+                '<div class="row"><span class="tag tag-success mono"><span class="dot dot-ok"></span>' + esc(r.version) + "</span>" +
+                (r.section ? '<span class="text-xs" style="font-weight:600;">' + esc(r.section) + "</span>" : "") + "</div>" +
+                '<span class="text-xs mono muted">' + esc(r.date || "") + "</span>" +
+                "</div>" +
+                itemsHtml +
+                "</div>"
+              );
+            }
+            return (
+              "<details>" +
+              "<summary>" +
+              '<span class="row"><span class="tag mono">' + esc(r.version) + "</span>" +
+              '<span>' + esc(r.section || ("Изменения (" + (r.items || []).length + ")")) + "</span></span>" +
+              '<span class="row"><span class="mono muted">' + esc(r.date || "") + '</span><span class="text-link lbl-open">Показать</span><span class="text-link lbl-close">Скрыть</span></span>' +
+              "</summary>" +
+              '<div class="details-body">' + itemsHtml + "</div>" +
+              "</details>"
+            );
+          })
+          .join("");
+      }
+    }
   }
 
   function switchTab(tabName) {
@@ -1720,6 +1766,11 @@ const clientScript = `
 
     if (ev.target.closest("#openPermJsonBtn")) {
       if (vscode) vscode.postMessage({ type: "openFile", path: ".agents/permissions.json" });
+      return;
+    }
+
+    if (ev.target.closest("#openChangelogBtn")) {
+      if (vscode) vscode.postMessage({ type: "openFile", path: "CHANGELOG.md" });
       return;
     }
 
@@ -2146,6 +2197,20 @@ const html = `<!DOCTYPE html>
             <div id="mcpBadges" class="row"></div>
           </div>
         </div>
+      </div>
+
+      <div id="changelogPanel" class="panel col hidden">
+        <div class="row-between">
+          <div>
+            <h3 class="title-md">История версий (Changelog)</h3>
+            <div class="text-xs muted">Реализованные возможности по версиям из CHANGELOG.md.</div>
+          </div>
+          <div class="row">
+            <span id="changelogCountBadge" class="tag mono">—</span>
+            <button type="button" id="openChangelogBtn" class="btn">Открыть CHANGELOG.md</button>
+          </div>
+        </div>
+        <div id="changelogList" class="col" style="gap:6px;"></div>
       </div>
     </section>
   </div>

@@ -942,6 +942,38 @@ const setupPipeline = {
   isProjectInitialized: hasPluginsJson && hasCanonicalMemory,
 };
 
+// 6.8. Changelog History (CHANGELOG.md)
+const changelogPath = path.join(rootDir, "CHANGELOG.md");
+const changelogRaw = readSafe(changelogPath, 40000);
+const changelogReleases = [];
+if (changelogRaw) {
+  let currentRel = null;
+  for (const line of changelogRaw.split(/\r?\n/)) {
+    const h2 = line.match(/^##\s+\[?([^\]\s]+)\]?(?:\s*-\s*(\d{4}-\d{2}-\d{2}))?/);
+    if (h2) {
+      if (currentRel) changelogReleases.push(currentRel);
+      currentRel = { version: h2[1].trim(), date: h2[2] || "", section: "", items: [] };
+      continue;
+    }
+    if (!currentRel) continue;
+    const h3 = line.match(/^###\s+(.+)$/);
+    if (h3 && !currentRel.section) {
+      currentRel.section = h3[1].trim();
+      continue;
+    }
+    const li = line.match(/^\s*-\s+(.+)$/);
+    if (li && currentRel.items.length < 12) {
+      currentRel.items.push(li[1].replace(/\*\*/g, "").replace(/`/g, "").trim());
+    }
+  }
+  if (currentRel) changelogReleases.push(currentRel);
+}
+const changelog = {
+  exists: changelogReleases.length > 0,
+  path: "CHANGELOG.md",
+  releases: changelogReleases.slice(0, 8),
+};
+
 // 7. Automated Heuristic PM & Orchestrator Signals
 const pmSignals = [];
 if (qaPreflight && Array.isArray(qaPreflight.critical) && qaPreflight.critical.length > 0) {
@@ -1064,6 +1096,7 @@ const payload = {
   permissions,
   velocity,
   setupPipeline,
+  changelog,
   structure: {
     hasLocalDir: fs.existsSync(localDir),
     hasBitrixDir: fs.existsSync(path.join(rootDir, "bitrix")),

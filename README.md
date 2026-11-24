@@ -15,7 +15,7 @@
 
 | Модуль | Версия | Скиллы | Субагенты | CLI-скрипты | Назначение |
 |---|---:|---:|---:|---:|---|
-| [`antigravity-bitrix-core`](antigravity-bitrix-core/) | `2.1.0` | **8** | **2** | **4** | **Ядро и Центральный Оркестратор**: ICE-приоритизация, Двухуровневый Live Quota-Aware Model Router, детерминированный **Command Center Dashboard v2.1**, онбординг Greenfield/Brownfield (`bitrix-project-init`), каноническая память (`AGENTS.md`, `docs/memory/*`, ADR, `docs/backlog.md`), стандарты Bitrix D7, код-ревью и Git-чекпоинты. |
+| [`antigravity-bitrix-core`](antigravity-bitrix-core/) | `2.3.0` | **8** | **2** | **4** | **Ядро и Центральный Оркестратор**: многоуровневый **Cock-up Prevention Gate**, 2-шкальная матрица (`Q1–Q4 × S/M/L`), политика границ `.agents/permissions.json`, трекер ритма и дорожная карта спринтов, детерминированный **Command Center Dashboard v2.3**, онбординг Greenfield/Brownfield (`bitrix-project-init`), каноническая память (`AGENTS.md`, `docs/memory/*`, ADR), стандарты Bitrix D7 и Git-чекпоинты. |
 | [`antigravity-bitrix-seo-geo`](antigravity-bitrix-seo-geo/) | `2.1.0` | **9** | **2** | **5** | **SEO, GEO (ИИ-поиск), Schema.org и Аналитика**: техаудит D7 (`component_epilog`, `RestartWorkarea` 404, `urlrewrite.php`), GEO 2026 (`/llms.txt`, AI-боты, капсулы), Schema.org JSON-LD/Microdata, E-commerce и мультисайтовость, GTM/GA4/Метрика, мониторинг SEO-дрейфа, анализ Screaming Frog и REST API дашборды. |
 | [`antigravity-bitrix-qa`](antigravity-bitrix-qa/) | `1.0.0` | **4** | **1** | **1** | **QA и Production Readiness**: Browser Visual QA (`375/768/1440px`), Click-Path аудит кнопок/AJAX/состояний, Pre-Launch аудит, регрессионные smoke-тесты и автоматический preflight-сканер безопасности `bitrix-qa-preflight.mjs`. |
 | [`antigravity-bitrix-marketing`](antigravity-bitrix-marketing/) | `1.0.0` | **4** | **1** | **0** | **Маркетинг, CRO и UX**: Product Lens (ICE anti-busywork), конверсионный копирайтинг (5-секундный тест, перехват пустого поиска и Out-of-Stock), retention-кампании с CRM, взвешенная визуальная UX-рубрика. |
@@ -71,6 +71,23 @@ bash ./init-bitrix-project.sh /path/to/my-bitrix-site --profile store --name "My
 ```
 
 Подробный пошаговый сценарий локального запуска и проверки см. в [QUICKSTART_LIVE_TEST.md](QUICKSTART_LIVE_TEST.md).
+
+---
+
+## История версий и реализованные возможности
+
+Полный список изменений хранится в [CHANGELOG.md](CHANGELOG.md), все релизы с тегами публикуются на странице [GitHub Releases](https://github.com/cash235/antigravity-bitrix-ecosystem/releases).
+
+| Версия | Дата | Ключевые реализованные возможности |
+|---|---|---|
+| **`v2.3.0`** | 2026-11-24 | Визуальный редактор границ `.agents/permissions.json` (6 осей, 3 пресета), трекер ритма (`ч/день × дн/нед`) и полная дорожная карта спринтов со сроками и задачами, автодеактивация выполненных кнопок, 6-шаговый Setup Pipeline, шкалы прогресса в левой панели IDE, скрипт подготовки релизов (`scripts/prepare-release.mjs`) и просмотр `CHANGELOG.md` в Дашборде. |
+| **`v2.2.0`** | 2026-11-24 | Многоуровневый **Cock-up Prevention Gate** («Не херню ли я делаю?») во всех правилах, оркестраторе и 6 субагентах, стандарт задачи (`North Star` + Ценность + Чеклист приёмки = DoD + Scope Triage + `Est/Actual`), 2-шкальная матрица приоритетов (`Q1–Q4 × S/M/L`). |
+| **`v2.1.0`** | 2026-11-20 | Детерминированный 5-вкладочный Command Center Dashboard (`artifact` + `webview`), нативное расширение левой панели Antigravity IDE (`antigravity-bitrix-ide-panel`), автоматический `QA Preflight`, 1-командный установщик `install-ecosystem` и бутстраппер `bitrix-bootstrap.mjs`. |
+
+Подготовить release notes перед публикацией новой версии:
+```powershell
+node scripts/prepare-release.mjs --dry-run
+```
 
 ---
 
