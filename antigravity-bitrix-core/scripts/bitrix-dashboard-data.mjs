@@ -14,6 +14,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { buildCmsChecklist } from "./bitrix-cms-checklist.mjs";
+import { listLearnedSkills } from "./bitrix-skill-collector.mjs";
 
 const args = process.argv.slice(2);
 const jsonMode = args.includes("--json");
@@ -978,6 +979,9 @@ const changelog = {
 // 6.9. 10-Block 1C-Bitrix CMS Readiness Master Checklist (PLUGIN-005)
 const cmsChecklist = buildCmsChecklist(rootDir, { qaPreflight });
 
+// 6.10. Live Anonymized Learned Skills & GitHub PR Center (PLUGIN-001)
+const learnedSkills = listLearnedSkills(rootDir);
+
 // 7. Automated Heuristic PM & Orchestrator Signals
 const pmSignals = [];
 if (qaPreflight && Array.isArray(qaPreflight.critical) && qaPreflight.critical.length > 0) {
@@ -1102,6 +1106,7 @@ const payload = {
   setupPipeline,
   changelog,
   cmsChecklist,
+  learnedSkills,
   structure: {
     hasLocalDir: fs.existsSync(localDir),
     hasBitrixDir: fs.existsSync(path.join(rootDir, "bitrix")),

@@ -2,6 +2,13 @@
 
 All notable changes to the **1C-Bitrix Antigravity Ecosystem** are documented in this file.
 
+## [v2.5.0] - 2026-11-24
+
+### Added (Sprint 4: Live Anonymized Skill Collector & 1-Click GitHub PR Center)
+- **`PLUGIN-001` — Live Anonymized Skill Collector (`antigravity-bitrix-core/scripts/bitrix-skill-collector.mjs`)**: stores project-discovered reusable 1C-Bitrix patterns (PHP 8.4, migrations, D7 fixes) in `.agents/learned-skills/*.md` with human-readable summaries, categories, and target plugin routing.
+- **Fail-Closed PII & Secret Sanitizer**: 10 deterministic blocking/redaction detectors (PEM private keys, GitHub/OpenAI/Google/AWS/Slack/Yandex/JWT tokens, hardcoded credentials, connection strings, SSH targets, real emails, phone numbers, local user paths, server IPs, client domains, and prompt-injection patterns) with zero false positives on clean Bitrix D7 code.
+- **Dashboard Tab «Навыки и PR» + IDE PR Gate**: interactive tab to capture new patterns, review sanitized content previews, toggle include/exclude checkboxes, run 1-click auto-redaction, delete entries, copy sanitized bundles, and submit confirmed Pull Requests to `cash235/antigravity-bitrix-ecosystem` (hard-blocked when any selected skill fails Sanitizer).
+
 ## [v2.4.0] - 2026-11-24
 
 ### Added (Sprint 3: 10-Block CMS Readiness Master Checklist, Release Tooling & Full Sprint Roadmap)

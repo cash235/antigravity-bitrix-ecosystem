@@ -329,6 +329,16 @@ const viewModel = {
     summary: { blocksCount: 0, totalItems: 0, applicableItems: 0, verifiedItems: 0, needsSetupItems: 0, notApplicableItems: 0, completionPct: 0 },
     blocks: [],
   },
+  learnedSkills: snapshot.learnedSkills || {
+    dir: ".agents/learned-skills",
+    exists: false,
+    count: 0,
+    readyCount: 0,
+    blockedCount: 0,
+    excludedCount: 0,
+    upstreamRepo: "cash235/antigravity-bitrix-ecosystem",
+    skills: [],
+  },
   backlog: {
     doneCount: snapshot.backlog?.doneCount ?? 0,
     openCount: snapshot.backlog?.openCount ?? 0,
@@ -890,6 +900,10 @@ const clientScript = `
     }
     const tabBacklogBtn = document.querySelector('[data-tab="backlog"]');
     if (tabBacklogBtn) tabBacklogBtn.textContent = "Бэклог (" + DATA.backlog.openCount + ")";
+    const tabSkillsBtn = document.querySelector('[data-tab="skills"]');
+    if (tabSkillsBtn && DATA.learnedSkills) {
+      tabSkillsBtn.textContent = "Навыки и PR (" + (DATA.learnedSkills.count || 0) + ")";
+    }
   }
 
   function renderSetupPipeline() {
@@ -1880,6 +1894,105 @@ const clientScript = `
     }
   }
 
+  function renderLearnedSkills() {
+    const ls = DATA.learnedSkills || { count: 0, readyCount: 0, blockedCount: 0, excludedCount: 0, skills: [], upstreamRepo: "cash235/antigravity-bitrix-ecosystem" };
+    const overview = document.getElementById("skillsOverviewBar");
+    if (overview) {
+      overview.innerHTML =
+        '<span class="tag tag-strong mono">Всего навыков: ' + esc(ls.count) + "</span>" +
+        '<span class="tag tag-success mono"><span class="dot dot-ok"></span>Готово к PR: ' + esc(ls.readyCount) + "</span>" +
+        '<span class="tag ' + (ls.blockedCount > 0 ? "tag-error" : "") + ' mono"><span class="dot ' + (ls.blockedCount > 0 ? "dot-err" : "dot-ok") + '"></span>Заблокировано Sanitizer: ' + esc(ls.blockedCount) + "</span>" +
+        '<span class="tag mono"><span class="dot dot-muted"></span>Исключено: ' + esc(ls.excludedCount) + "</span>" +
+        '<span class="tag mono">Репозиторий: ' + esc(ls.upstreamRepo) + "</span>";
+    }
+
+    const submitBtn = document.getElementById("submitSkillsPrBtn");
+    if (submitBtn) {
+      const canSubmit = ls.readyCount > 0 && ls.blockedCount === 0;
+      submitBtn.disabled = !canSubmit;
+      submitBtn.style.opacity = canSubmit ? "1" : "0.5";
+      submitBtn.title = canSubmit
+        ? "Создать Pull Request с обезличенными навыками в " + ls.upstreamRepo
+        : (ls.blockedCount > 0
+            ? "Отправка заблокирована: сначала обезличьте или исключите навыки с предупреждениями Sanitizer"
+            : "Добавьте хотя бы один проверенный навык");
+    }
+
+    const listEl = document.getElementById("learnedSkillsList");
+    if (!listEl) return;
+    const skills = Array.isArray(ls.skills) ? ls.skills : [];
+    if (skills.length === 0) {
+      listEl.innerHTML =
+        '<div class="subcard col" style="gap:5px;">' +
+        '<strong class="text-xs">В папке .agents/learned-skills/ пока нет накопленных навыков.</strong>' +
+        '<div class="text-xs muted">Когда в ходе работы над проектом 1С-Битрикс вы находите полезный паттерн (фикс PHP 8.4, миграция БД, оптимизация D7, SEO-приём) — сохраните его через форму выше или через агента. Перед отправкой на GitHub каждый навык проходит жёсткую проверку PII &amp; Secret Sanitizer.</div>' +
+        "</div>";
+      return;
+    }
+
+    listEl.innerHTML = skills
+      .map(function (s) {
+        const isBlocked = Boolean(s.blocked);
+        const isExcluded = Boolean(s.excluded);
+        const verdictTag = isExcluded
+          ? '<span class="tag"><span class="dot dot-muted"></span>Исключён из PR</span>'
+          : isBlocked
+          ? '<span class="tag tag-error"><span class="dot dot-err"></span>Sanitizer: BLOCK (' + esc(s.findingsCount) + ")</span>"
+          : '<span class="tag tag-success"><span class="dot dot-ok"></span>Sanitizer: PASS</span>';
+
+        const findingsHtml =
+          isBlocked && Array.isArray(s.findings) && s.findings.length > 0
+            ? '<div class="panel col" style="gap:4px;border-color:var(--error);">' +
+              '<div class="text-xs text-error" style="font-weight:600;">Блокирующие находки PII / секретов / доменов:</div>' +
+              s.findings
+                .map(function (f) {
+                  return (
+                    '<div class="text-xs mono">• стр. ' + esc(f.line) + " [" + esc(f.type) + "] " +
+                    esc(f.reason) + " (" + esc(f.snippet) + ")</div>"
+                  );
+                })
+                .join("") +
+              "</div>"
+            : "";
+
+        return (
+          '<article class="subcard col" style="gap:7px;' + (isExcluded ? "opacity:0.65;" : "") + '">' +
+          '<div class="row-between">' +
+          '<div class="row" style="gap:6px;">' +
+          '<label class="row text-xs" style="cursor:pointer;gap:5px;">' +
+          '<input type="checkbox" class="skill-include-cb" data-skill-file="' + esc(s.filename) + '"' + (!isExcluded ? " checked" : "") + " />" +
+          "<strong>" + esc(s.title) + "</strong>" +
+          "</label>" +
+          '<span class="tag mono">' + esc(s.targetPlugin) + "</span>" +
+          '<span class="tag">' + esc(s.category) + "</span>" +
+          "</div>" +
+          '<div class="row">' +
+          verdictTag +
+          '<span class="text-xs mono muted">' + esc(s.createdAt || "") + "</span>" +
+          "</div>" +
+          "</div>" +
+          '<div class="text-xs"><span class="muted">Расшифровка:</span> ' + esc(s.summary) + "</div>" +
+          findingsHtml +
+          "<details>" +
+          "<summary>" +
+          "<span>Просмотр обезличенного содержимого (" + esc(s.filename) + ")</span>" +
+          '<span class="text-link lbl-open">Показать</span>' +
+          '<span class="text-link lbl-close">Скрыть</span>' +
+          "</summary>" +
+          '<div class="details-body"><pre class="mono">' + esc(s.sanitizedBody || s.body || "") + "</pre></div>" +
+          "</details>" +
+          '<div class="row" style="justify-content:flex-end;">' +
+          (isBlocked
+            ? '<button type="button" class="btn btn-primary" data-skill-sanitize="' + esc(s.filename) + '">Обезличить и сохранить</button>'
+            : "") +
+          '<button type="button" class="btn" data-skill-delete="' + esc(s.filename) + '">Удалить</button>' +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
   function switchTab(tabName) {
     state.tab = tabName;
     document.querySelectorAll(".tab-btn").forEach(function (btn) {
@@ -2001,6 +2114,99 @@ const clientScript = `
       return;
     }
 
+    if (ev.target.closest("#addLearnedSkillBtn")) {
+      const title = ((document.getElementById("skillTitleInput") || {}).value || "").trim();
+      const summary = ((document.getElementById("skillSummaryInput") || {}).value || "").trim();
+      const targetPlugin = (document.getElementById("skillPluginSelect") || {}).value || "antigravity-bitrix-core";
+      const category = (document.getElementById("skillCategorySelect") || {}).value || "d7-backend";
+      const body = ((document.getElementById("skillBodyInput") || {}).value || "").trim();
+      const autoRedact = Boolean((document.getElementById("skillAutoRedactCb") || {}).checked);
+      if (!title || !body) {
+        showToast("Заполните название и содержимое навыка");
+        return;
+      }
+      if (vscode) {
+        vscode.postMessage({
+          type: "addLearnedSkill",
+          title: title,
+          summary: summary || title,
+          targetPlugin: targetPlugin,
+          category: category,
+          body: body,
+          autoRedact: autoRedact,
+        });
+      } else {
+        copyText(
+          'Сохрани навык в .agents/learned-skills/ через bitrix-skill-collector.mjs --add --title "' + title + '" --summary "' + (summary || title) + '" --plugin ' + targetPlugin + (autoRedact ? " --redact" : ""),
+          "Команда сохранения навыка скопирована"
+        );
+      }
+      return;
+    }
+
+    const sanBtn = ev.target.closest("[data-skill-sanitize]");
+    if (sanBtn && sanBtn.dataset.skillSanitize) {
+      if (vscode) {
+        vscode.postMessage({ type: "sanitizeLearnedSkill", filename: sanBtn.dataset.skillSanitize });
+      } else {
+        copyText("node antigravity-bitrix-core/scripts/bitrix-skill-collector.mjs . --sanitize " + sanBtn.dataset.skillSanitize, "Команда обезличивания скопирована");
+      }
+      return;
+    }
+
+    const delBtn = ev.target.closest("[data-skill-delete]");
+    if (delBtn && delBtn.dataset.skillDelete) {
+      if (vscode) {
+        vscode.postMessage({ type: "deleteLearnedSkill", filename: delBtn.dataset.skillDelete });
+      } else {
+        showToast("Удаление файла доступно в режиме IDE Webview");
+      }
+      return;
+    }
+
+    if (ev.target.closest("#submitSkillsPrBtn")) {
+      const ls = DATA.learnedSkills || { skills: [] };
+      const active = (ls.skills || []).filter(function (s) { return !s.excluded; });
+      if (active.length === 0) {
+        showToast("Не выбрано ни одного навыка");
+        return;
+      }
+      if (active.some(function (s) { return s.blocked; })) {
+        showToast("Заблокировано Sanitizer: сначала обезличьте или исключите проблемные навыки");
+        return;
+      }
+      const files = active.map(function (s) { return s.filename; });
+      if (vscode) {
+        vscode.postMessage({ type: "submitSkillsPr", files: files });
+      } else {
+        copyText(
+          "Выполни Fail-Closed сборку PR для обезличенных навыков (" + files.join(", ") + ") в cash235/antigravity-bitrix-ecosystem через bitrix-skill-collector.mjs --prepare-pr.",
+          "Промпт отправки PR скопирован"
+        );
+      }
+      return;
+    }
+
+    if (ev.target.closest("#copySkillsBundleBtn")) {
+      const ls = DATA.learnedSkills || { skills: [] };
+      const active = (ls.skills || []).filter(function (s) { return !s.excluded; });
+      if (active.length === 0) {
+        showToast("Нет выбранных навыков для копирования");
+        return;
+      }
+      if (active.some(function (s) { return s.blocked; })) {
+        showToast("Заблокировано Sanitizer: сначала обезличьте навыки со статусом BLOCK");
+        return;
+      }
+      const text = active
+        .map(function (s) {
+          return "### " + s.title + " (" + s.targetPlugin + ")\\n> " + s.summary + "\\n\\n" + (s.sanitizedBody || s.body || "");
+        })
+        .join("\\n\\n---\\n\\n");
+      copyText(text, "Обезличенный бандл навыков (" + active.length + ") скопирован");
+      return;
+    }
+
     if (ev.target.closest("#saveVelBtn")) {
       const h = Number((document.getElementById("velHoursInput") || {}).value || 2);
       const d = Number((document.getElementById("velDaysInput") || {}).value || 5);
@@ -2063,6 +2269,23 @@ const clientScript = `
       });
       renderCmsChecklist();
       showToast("Профиль чеклиста переключён на «" + draftCmsChecklist.archetypeLabel + "»");
+      return;
+    }
+    const skillCb = ev.target.closest(".skill-include-cb");
+    if (skillCb && skillCb.dataset.skillFile) {
+      const fname = skillCb.dataset.skillFile;
+      const excluded = !skillCb.checked;
+      if (vscode) {
+        vscode.postMessage({ type: "toggleLearnedSkill", filename: fname, excluded: excluded });
+      } else if (DATA.learnedSkills && Array.isArray(DATA.learnedSkills.skills)) {
+        DATA.learnedSkills.skills.forEach(function (s) {
+          if (s.filename === fname) s.excluded = excluded;
+        });
+        DATA.learnedSkills.excludedCount = DATA.learnedSkills.skills.filter(function (s) { return s.excluded; }).length;
+        DATA.learnedSkills.blockedCount = DATA.learnedSkills.skills.filter(function (s) { return !s.excluded && s.blocked; }).length;
+        DATA.learnedSkills.readyCount = DATA.learnedSkills.skills.filter(function (s) { return !s.excluded && !s.blocked; }).length;
+        renderLearnedSkills();
+      }
     }
   });
 
@@ -2118,6 +2341,7 @@ const clientScript = `
     renderGitAndLocal();
     renderEcosystem();
     renderPermissionsMatrix();
+    renderLearnedSkills();
     switchTab("orchestrator");
   } catch (err) {
     showFatal(err && err.message ? err.message : String(err));
@@ -2221,6 +2445,7 @@ const html = `<!DOCTYPE html>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="backlog">Бэклог</button>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="git">Git и /local/</button>
         <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="ecosystem">Плагины и Границы</button>
+        <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="skills">Навыки и PR</button>
       </nav>
     </header>
 
@@ -2507,6 +2732,79 @@ const html = `<!DOCTYPE html>
           </div>
         </div>
         <div id="changelogList" class="col" style="gap:6px;"></div>
+      </div>
+    </section>
+
+    <!-- TAB 6: LEARNED SKILLS & GITHUB PR CENTER (PLUGIN-001) -->
+    <section id="tab-skills" class="tab-panel hidden col">
+      <div class="panel col">
+        <div class="row-between">
+          <div>
+            <h2 class="title-md">Накопленные навыки и GitHub PR (.agents/learned-skills/)</h2>
+            <div class="text-xs muted">Обезличенный сбор боевого опыта (PHP 8.4, миграции, D7, SEO/QA) с жёсткой защитой PII &amp; Secret Sanitizer.</div>
+          </div>
+          <div class="row">
+            <button type="button" id="copySkillsBundleBtn" class="btn">Скопировать обезличенный бандл</button>
+            <button type="button" id="submitSkillsPrBtn" class="btn btn-primary">Отправить в GitHub (PR)</button>
+          </div>
+        </div>
+        <div id="skillsOverviewBar" class="row text-xs"></div>
+
+        <details>
+          <summary>
+            <span>+ Добавить новый найденный навык в .agents/learned-skills/</span>
+            <span class="text-link lbl-open">Открыть форму</span>
+            <span class="text-link lbl-close">Скрыть</span>
+          </summary>
+          <div class="details-body">
+            <div class="grid-2">
+              <div class="col" style="gap:4px;">
+                <label class="text-xs muted" for="skillTitleInput">Название навыка</label>
+                <input id="skillTitleInput" type="text" class="input" placeholder="Напр.: Безопасная миграция свойств инфоблока под PHP 8.4" />
+              </div>
+              <div class="col" style="gap:4px;">
+                <label class="text-xs muted" for="skillSummaryInput">Человеческая расшифровка (зачем нужен)</label>
+                <input id="skillSummaryInput" type="text" class="input" placeholder="Коротко: какую проблему решает и когда применять" />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="col" style="gap:4px;">
+                <label class="text-xs muted" for="skillPluginSelect">Целевой плагин</label>
+                <select id="skillPluginSelect" class="select">
+                  <option value="antigravity-bitrix-core">antigravity-bitrix-core (D7 / Архитектура / Память)</option>
+                  <option value="antigravity-bitrix-seo-geo">antigravity-bitrix-seo-geo (SEO / GEO / Аналитика)</option>
+                  <option value="antigravity-bitrix-qa">antigravity-bitrix-qa (QA / Тесты / Безопасность)</option>
+                  <option value="antigravity-bitrix-marketing">antigravity-bitrix-marketing (CRO / Маркетинг / UX)</option>
+                </select>
+              </div>
+              <div class="col" style="gap:4px;">
+                <label class="text-xs muted" for="skillCategorySelect">Категория</label>
+                <select id="skillCategorySelect" class="select">
+                  <option value="d7-backend">D7 Backend</option>
+                  <option value="php8">PHP 8.x</option>
+                  <option value="migrations">Миграции БД / Инфоблоки</option>
+                  <option value="ecommerce-crm">E-commerce / CRM / 1С</option>
+                  <option value="seo-geo">SEO / GEO</option>
+                  <option value="qa">QA / Производительность</option>
+                  <option value="frontend">Frontend / Шаблоны</option>
+                </select>
+              </div>
+            </div>
+            <div class="col" style="gap:4px;">
+              <label class="text-xs muted" for="skillBodyInput">Описание паттерна / рабочий пример кода (Markdown)</label>
+              <textarea id="skillBodyInput" class="input mono" style="height:110px;padding:8px;resize:vertical;" placeholder="Опишите суть приёма, условия применения и чистый D7-пример без клиентских доменов и секретов..."></textarea>
+            </div>
+            <div class="row-between">
+              <label class="row text-xs muted" style="cursor:pointer;gap:5px;">
+                <input id="skillAutoRedactCb" type="checkbox" checked />
+                Автоматически обезличить найденные домены, пути и секреты перед сохранением
+              </label>
+              <button type="button" id="addLearnedSkillBtn" class="btn btn-primary">Проверить и сохранить</button>
+            </div>
+          </div>
+        </details>
+
+        <div id="learnedSkillsList" class="col" style="gap:8px;"></div>
       </div>
     </section>
   </div>

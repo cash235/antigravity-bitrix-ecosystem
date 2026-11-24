@@ -5,6 +5,7 @@ const { execFile } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 
 const PLUGINS_ROOT = path.join(os.homedir(), ".gemini", "config", "plugins");
 const CORE_SCRIPTS = path.join(PLUGINS_ROOT, "antigravity-bitrix-core", "scripts");
@@ -451,6 +452,82 @@ function activate(context) {
     if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "knowledge");
   }
 
+  async function loadSkillCollector() {
+    const collectorPath = path.join(CORE_SCRIPTS, "bitrix-skill-collector.mjs");
+    if (!fs.existsSync(collectorPath)) {
+      throw new Error("bitrix-skill-collector.mjs не найден. Переустановите antigravity-bitrix-core.");
+    }
+    return import(pathToFileURL(collectorPath).href);
+  }
+
+  async function handleLearnedSkillAction(msg) {
+    const rootDir = getWorkspaceRoot();
+    if (!rootDir) return;
+    try {
+      const mod = await loadSkillCollector();
+      if (msg.type === "addLearnedSkill") {
+        const res = mod.saveLearnedSkill(rootDir, {
+          title: msg.title,
+          summary: msg.summary,
+          targetPlugin: msg.targetPlugin,
+          category: msg.category,
+          body: msg.body,
+          autoRedact: Boolean(msg.autoRedact),
+        });
+        vscode.window.showInformationMessage(
+          `Навык сохранён в ${res.relPath} (Sanitizer: ${res.verdict}${res.findings.length ? ", замечаний: " + res.findings.length : ""}).`
+        );
+      } else if (msg.type === "toggleLearnedSkill") {
+        mod.setLearnedSkillExcluded(rootDir, msg.filename, Boolean(msg.excluded));
+      } else if (msg.type === "sanitizeLearnedSkill") {
+        const res = mod.sanitizeExistingSkill(rootDir, msg.filename);
+        vscode.window.showInformationMessage(`Обезличивание выполнено (${res.filename}) → Sanitizer: ${res.verdict}.`);
+      } else if (msg.type === "deleteLearnedSkill") {
+        const confirm = await vscode.window.showWarningMessage(
+          `Удалить накопленный навык ${msg.filename} из .agents/learned-skills/?`,
+          { modal: true },
+          "Удалить"
+        );
+        if (confirm !== "Удалить") return;
+        mod.deleteLearnedSkill(rootDir, msg.filename);
+        vscode.window.showInformationMessage(`Навык ${msg.filename} удалён.`);
+      } else if (msg.type === "submitSkillsPr") {
+        const bundle = mod.prepareSkillsPrBundle(rootDir, msg.files);
+        if (!bundle.ok || bundle.blocked) {
+          vscode.window.showErrorMessage(bundle.error || "Отправка заблокирована Sanitizer.");
+          return;
+        }
+        const confirm = await vscode.window.showWarningMessage(
+          `Создать Pull Request (${bundle.skillsCount} обезличенных навыков, Sanitizer: PASS) в ${bundle.upstreamRepo}?`,
+          { modal: true },
+          "Создать Pull Request"
+        );
+        if (confirm !== "Создать Pull Request") return;
+        const res = mod.submitSkillsPullRequest(rootDir, msg.files);
+        if (res.ok && res.prUrl) {
+          const openAction = await vscode.window.showInformationMessage(
+            `Pull Request создан (${res.skillsCount} навыков): ${res.prUrl}`,
+            "Открыть PR в браузере"
+          );
+          if (openAction === "Открыть PR в браузере") {
+            vscode.env.openExternal(vscode.Uri.parse(res.prUrl));
+          }
+        } else {
+          if (res.bundle && res.bundle.prBody) {
+            await vscode.env.clipboard.writeText(`# ${res.bundle.prTitle}\n\n${res.bundle.prBody}`);
+          }
+          vscode.window.showWarningMessage(
+            `${res.error || "Не удалось создать PR автоматически."} Обезличенный бандл скопирован в буфер обмена.`
+          );
+        }
+      }
+      await refreshSnapshot();
+      if (dashboardPanel) await renderDashboardIntoPanel(dashboardPanel, "skills");
+    } catch (err) {
+      vscode.window.showErrorMessage(`Ошибка Skill Collector: ${err.message}`);
+    }
+  }
+
   async function openWorkspaceFile(relPath) {
     const rootDir = getWorkspaceRoot();
     if (!rootDir || !relPath) return;
@@ -499,6 +576,14 @@ function activate(context) {
         await saveVelocityToWorkspace(msg.hoursPerDay, msg.daysPerWeek);
       } else if (msg.type === "saveCmsChecklist") {
         await saveCmsChecklistToWorkspace(msg.archetype, msg.archetypeLabel, msg.blocks);
+      } else if (
+        msg.type === "addLearnedSkill" ||
+        msg.type === "toggleLearnedSkill" ||
+        msg.type === "sanitizeLearnedSkill" ||
+        msg.type === "deleteLearnedSkill" ||
+        msg.type === "submitSkillsPr"
+      ) {
+        await handleLearnedSkillAction(msg);
       } else if (msg.type === "openFile") {
         await openWorkspaceFile(msg.path);
       }
