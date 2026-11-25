@@ -52,6 +52,7 @@
 | **Спринт 6** | `PLUGIN-014` | Память v2.0: `manifest.json`, Hooks-конвейер, локальный поиск и `.antigravity-plugin` (`obsidian-mind` + `ECC`) | `Q2` | `M` | `3.5 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
 | **Спринт 7** | `PLUGIN-015` | Расширение `antigravity-bitrix-marketing` v2.0 (39-pt LP audit, A/B, CPA/ROAS, AI Visibility по `marketing-skills`) | `Q2` | `M` | `3.0 ч` | `0.3 ч` | Выполнено (`100%` DoD) |
 | **Спринт 7** | `PLUGIN-016` | Автодетект стека 1С-Битрикс, `plugins-lock.json` (SHA-256), `--dry-run` и CI Prompt-Injection Scanner (`autoskills`) | `Q2` | `M` | `3.0 ч` | `0.4 ч` | Выполнено (`100%` DoD) |
+| **Спринт 8** | `PLUGIN-018` | Evidence Gate для 10-блочного чеклиста CMS (запрет `verified` без доказательства) и фикс `b_catalog_currency` | `Q1` | `M` | `2.0 ч` | `—` | В очереди |
 
 ---
 
@@ -238,3 +239,17 @@
   - [x] Генерируется `.agents/plugins-lock.json` с SHA-256 хешами установленных версий плагинов и проверкой целостности в `bitrix-dashboard-data.mjs`.
   - [x] В `.github/workflows/ci.yml` добавлен детерминированный **Skill Security & Prompt-Injection Scanner** для всех `SKILL.md` / `agents/*.md` (критично перед открытием `PLUGIN-001` для внешних PR).
   - [x] Пройдены позитивные и негативные тесты сканера безопасности и `--dry-run` бутстрапа.
+
+---
+
+## Спринт 8 — Доверие к чеклисту и Evidence Gate (`Q1`, `Est: 2.0 ч`)
+
+### `PLUGIN-018` — Evidence Gate для 10-блочного чеклиста CMS (запрет `verified` без доказательства) и фикс `b_catalog_currency`
+- **Шкалы**: `[Q1: Важно + Срочно]` · `[M: Средняя]` · **Оценка (`Est`)**: `2.0 ч` · **Факт (`Actual`)**: `—`
+- **Бизнес-ценность**: исключает ложно-зелёные пункты в `cms-checklist.json` (когда пункт помечен пройденным без фактического SQL-запроса или проверки в админке), возвращая 100% доверие к статусам готовности магазина.
+- **Чеклист приёмки (DoD)**:
+  - [ ] В `bitrix-cms-checklist.mjs` разделить статусы на `auto_verified` (подтверждено детерминированным скриптом), `operator_verified` (ручное подтверждение с обязательным фактом) и `needs_setup`, а также запретить статус `verified` для пунктов с `autoEvidence: null` без заполненных полей `evidenceSource`, `verifiedBy` и `verifiedAt`.
+  - [ ] В `bitrix-dashboard-render.mjs` визуально различать «Проверено скриптом» и «Подтверждено вручную (с доказательством)», а пункты без `evidenceSource` автоматически помечать как требующие проверки.
+  - [ ] Исправить имя таблицы в блоке `B04-1` (`bitrix-cms-checklist.mjs` и `bitrix-project-init/SKILL.md`): `b_currency` → `b_catalog_currency` (`BASE='Y'`), явно разделить базовую валюту ядра и `b_option` (`sale.default_currency`), а в `blockPrompt` блока 4 встроить готовый Read-Only SQL-сниппет сверки `b_catalog_currency` и `b_catalog_price`.
+  - [ ] Добавить проверку целостности Evidence Gate в `bitrix-cms-checklist.mjs` (валидация при `--write` / `--json`).
+  - [ ] Пройдены `node --check`, VM-проверка рендерера, `0 PII` и переустановка обновлённых плагинов в глобальный конфиг.
